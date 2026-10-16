@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>My Orders | SmartResolve AI</title>
+  <meta name="description" content="View and manage your orders with SmartResolve AI support.">
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='8' fill='%233d7fff'/><text y='22' x='6' font-size='18' font-family='sans-serif' fill='white' font-weight='bold'>S</text></svg>">
+  <link rel="stylesheet" href="styles/main.css">
+  <style>
+    .orders-layout { max-width: 1100px; margin: 0 auto; padding: var(--space-8) var(--space-6); padding-top: calc(var(--header-height) + var(--space-8)); }
+    .filters-bar { display: flex; align-items: center; gap: var(--space-3); flex-wrap: wrap; margin-bottom: var(--space-6); }
+    .search-input { flex: 1; min-width: 200px; max-width: 320px; }
+    .order-card {
+      background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: var(--radius-lg);
+      padding: var(--space-5); transition: border-color var(--transition-fast);
+    }
+    .order-card:hover { border-color: var(--border-default); }
+    .order-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: var(--space-4); flex-wrap: wrap; gap: var(--space-2); }
+    .order-id { font-size: 0.9rem; font-weight: 700; color: var(--text-primary); font-family: var(--font-mono); }
+    .order-product { font-size: 1rem; font-weight: 600; color: var(--text-primary); margin-bottom: var(--space-1); }
+    .order-meta { font-size: 0.8rem; color: var(--text-muted); }
+    .order-timeline {
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+      gap: var(--space-4); background: var(--bg-elevated); border-radius: var(--radius-md);
+      padding: var(--space-4); margin: var(--space-4) 0;
+    }
+    .timeline-item { }
+    .timeline-label { font-size: 0.65rem; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.07em; margin-bottom: 4px; }
+    .timeline-val   { font-size: 0.8rem; color: var(--text-primary); font-weight: 500; }
+    .order-footer { display: flex; justify-content: space-between; align-items: center; padding-top: var(--space-3); border-top: 1px solid var(--border-subtle); flex-wrap: wrap; gap: var(--space-2); }
+    .order-amount { font-size: 1.1rem; font-weight: 700; color: var(--text-primary); }
+
+    .orders-grid { display: flex; flex-direction: column; gap: var(--space-4); }
+    .orders-skeleton { display: flex; flex-direction: column; gap: var(--space-4); }
+
+    .pagination { display: flex; align-items: center; gap: var(--space-2); justify-content: center; margin-top: var(--space-8); }
+    .page-info { font-size: 0.8rem; color: var(--text-muted); }
+  </style>
+</head>
+<body>
+
+<nav class="navbar">
+  <div class="navbar-inner">
+    <a href="index.html" class="navbar-brand">
+      <div class="navbar-logo">S</div>
+      <span class="navbar-name">SmartResolve AI</span>
+    </a>
+    <nav class="navbar-nav">
+      <a href="customer.html" class="nav-link">Chat</a>
+      <a href="orders.html" class="nav-link active">My Orders</a>
+    </nav>
+    <div class="navbar-actions" id="navbar-user"></div>
+  </div>
+</nav>
+
+<div class="orders-layout">
+  <div class="page-header">
+    <h1 class="page-title">My Orders</h1>
+    <p class="page-subtitle">View order status and get support for any issue.</p>
+  </div>
+
+  <!-- Filters -->
+  <div class="filters-bar">
+    <input class="form-input search-input" type="text" id="search-input" placeholder="Search by order ID or product...">
+    <select class="form-select" style="width:auto;" id="status-filter" onchange="applyFilters()">
+      <option value="">All Statuses</option>
+      <option value="PROCESSING">Processing</option>
+      <option value="SHIPPED">Shipped</option>
+      <option value="IN_TRANSIT">In Transit</option>
+      <option value="OUT_FOR_DELIVERY">Out for Delivery</option>
+      <option value="DELIVERED">Delivered</option>
+      <option value="DELAYED">Delayed</option>
+      <option value="CANCELLED">Cancelled</option>
+    </select>
+    <button class="btn btn-ghost btn-sm" onclick="clearFilters()">Clear</button>
+  </div>
+
+  <!-- Orders List -->
+  <div id="orders-container">
+    <!-- Skeleton -->
+    <div class="orders-skeleton">
+      <div class="order-card"><div class="skeleton" style="height:100px;"></div></div>
+      <div class="order-card"><div class="skeleton" style="height:100px;"></div></div>
+      <div class="order-card"><div class="skeleton" style="height:100px;"></div></div>
+    </div>
+  </div>
+
+  <div class="pagination" id="pagination" style="display:none;">
+    <button class="btn btn-secondary btn-sm" id="prev-btn" onclick="changePage(-1)">Previous</button>
+    <span class="page-info" id="page-info"></span>
+    <button class="btn btn-secondary btn-sm" id="next-btn" onclick="changePage(1)">Next</button>
+  </div>
+</div>
+
+<div class="toast-container"></div>
+
+<script src="scripts/utils.js"></script>
+<script>
+  let allOrders = [];
+  let filteredOrders = [];
+  let currentPage = 1;
+  const PAGE_SIZE = 10;
+
+  document.addEventListener('DOMContentLoaded', async () => {
+    Auth.requireAuth();
+    await loadOrders();
+    document.getElementById('search-input').addEventListener('input', debounce(applyFilters, 300));
+  });
+
+  function debounce(fn, delay) {
+    let t;
+    return (...args) => { clearTimeout(t); t = setTimeout(() => fn(...args), delay); };
+  }
+
+  async function loadOrders() {
+    try {
+      const res = await Api.get('/orders?limit=100');
+      allOrders = res.data || res.orders || [];
+      filteredOrders = [...allOrders];
+      renderOrders();
+    } catch (err) {
+      Toast.error(err.message);
+      document.getElementById('orders-container').innerHTML = `
+        <div class="empty-state">
+          <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/></svg>
+          <h3>Failed to load orders</h3>
+          <p>${escapeHtml(err.message)}</p>
+        </div>`;
+    }
+  }
+
+  function applyFilters() {
+    const search = document.getElementById('search-input').value.toLowerCase();
+    const status = document.getElementById('status-filter').value;
+    filteredOrders = allOrders.filter(o => {
+      const matchesSearch = !search ||
+        (o.orderId || '').toLowerCase().includes(search) ||
+        (o.productName || '').toLowerCase().includes(search) ||
+        (o.productId || '').toLowerCase().includes(search);
+      const matchesStatus = !status || o.status === status;
+      return matchesSearch && matchesStatus;
+    });
+    currentPage = 1;
+    renderOrders();
+  }
+
+  function clearFilters() {
+    document.getElementById('search-input').value = '';
+    document.getElementById('status-filter').value = '';
+    filteredOrders = [...allOrders];
+    currentPage = 1;
+    renderOrders();
+  }
+
+  function changePage(dir) {
+    const totalPages = Math.ceil(filteredOrders.length / PAGE_SIZE);
+    currentPage = Math.max(1, Math.min(totalPages, currentPage + dir));
+    renderOrders();
+  }
+
+  function renderOrders() {
+    const container = document.getElementById('orders-container');
+    const pagEl = document.getElementById('pagination');
+
+    if (!filteredOrders.length) {
+      container.innerHTML = `
+        <div class="empty-state">
+          <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+          <h3>No orders found</h3>
+          <p>Try adjusting your search or filters.</p>
+        </div>`;
+      pagEl.style.display = 'none';
+      return;
+    }
+
+    const totalPages = Math.ceil(filteredOrders.length / PAGE_SIZE);
+    const start = (currentPage - 1) * PAGE_SIZE;
+    const pageOrders = filteredOrders.slice(start, start + PAGE_SIZE);
+
+    container.innerHTML = `<div class="orders-grid">${pageOrders.map(renderOrderCard).join('')}</div>`;
+
+    if (filteredOrders.length > PAGE_SIZE) {
+      pagEl.style.display = 'flex';
+      document.getElementById('page-info').textContent = `Page ${currentPage} of ${totalPages}`;
+      document.getElementById('prev-btn').disabled = currentPage === 1;
+      document.getElementById('next-btn').disabled = currentPage === totalPages;
+    } else {
+      pagEl.style.display = 'none';
+    }
+  }
+
+  function renderOrderCard(order) {
+    const productName = order.productName || (typeof order.productId === 'object' ? order.productId.name : order.productId) || 'Product';
+    const statusClass = badgeClass(order.status);
+
+    return `
+      <div class="order-card">
+        <div class="order-header">
+          <div>
+            <div class="order-id">#${escapeHtml(order.orderId || order._id?.slice(-8))}</div>
+            <div class="order-product">${escapeHtml(productName)}</div>
+            <div class="order-meta">Qty: ${order.quantity || 1} &middot; ${escapeHtml(order.paymentMethod || 'N/A')}</div>
+          </div>
+          <div style="display:flex; align-items:center; gap:var(--space-3);">
+            <span class="badge ${statusClass}">${escapeHtml(order.status)}</span>
+          </div>
+        </div>
+
+        <div class="order-timeline">
+          <div class="timeline-item">
+            <div class="timeline-label">Ordered</div>
+            <div class="timeline-val">${formatDate(order.orderDate)}</div>
+          </div>
+          <div class="timeline-item">
+            <div class="timeline-label">Shipped</div>
+            <div class="timeline-val">${formatDate(order.shippingDate) || 'Pending'}</div>
+          </div>
+          <div class="timeline-item">
+            <div class="timeline-label">Expected</div>
+            <div class="timeline-val">${formatDate(order.expectedDelivery)}</div>
+          </div>
+          <div class="timeline-item">
+            <div class="timeline-label">Delivered</div>
+            <div class="timeline-val">${formatDate(order.actualDelivery) || (order.status === 'DELIVERED' ? 'Delivered' : 'Pending')}</div>
+          </div>
+        </div>
+
+        <div class="order-footer">
+          <div class="order-amount">${formatCurrency(order.totalAmount)}</div>
+          <div style="display:flex; gap:var(--space-2);">
+            <a href="customer.html?orderId=${escapeHtml(order.orderId || '')}" class="btn btn-secondary btn-sm">Get Support</a>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+</script>
+</body>
+</html>

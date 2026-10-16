@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SmartResolve AI: Intelligent E-Commerce Customer Support</title>
+  <meta name="description" content="SmartResolve AI uses prompt engineering, policy-grounded reasoning and human escalation to deliver reliable e-commerce customer support.">
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='8' fill='%233d7fff'/><text y='22' x='6' font-size='18' font-family='sans-serif' fill='white' font-weight='bold'>S</text></svg>">
+  <link rel="stylesheet" href="styles/main.css">
+  <style>
+    /* Landing-page specific styles */
+    .landing-navbar { background: rgba(10,12,16,0.85); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); }
+    .hero {
+      min-height: 100vh;
+      display: flex; align-items: center; justify-content: center;
+      padding-top: var(--header-height);
+      position: relative; overflow: hidden;
+    }
+    .hero-bg {
+      position: absolute; inset: 0; z-index: 0;
+      background:
+        radial-gradient(ellipse 80% 50% at 50% 0%, rgba(61,127,255,0.08) 0%, transparent 70%),
+        radial-gradient(ellipse 40% 30% at 80% 80%, rgba(6,182,212,0.05) 0%, transparent 60%);
+    }
+    .hero-grid {
+      position: absolute; inset: 0; z-index: 0;
+      background-image: linear-gradient(var(--border-subtle) 1px, transparent 1px),
+                        linear-gradient(90deg, var(--border-subtle) 1px, transparent 1px);
+      background-size: 48px 48px;
+      opacity: 0.35;
+    }
+    .hero-content { position: relative; z-index: 1; text-align: center; max-width: 760px; margin: 0 auto; padding: 0 var(--space-6); }
+    .hero-label {
+      display: inline-flex; align-items: center; gap: var(--space-2);
+      background: var(--accent-subtle); border: 1px solid rgba(61,127,255,0.25);
+      color: var(--accent-primary); font-size: 0.75rem; font-weight: 600;
+      letter-spacing: 0.08em; text-transform: uppercase; padding: 5px 14px;
+      border-radius: var(--radius-sm); margin-bottom: var(--space-6);
+    }
+    .hero-title {
+      font-size: clamp(2rem, 5vw, 3.5rem); font-weight: 700;
+      letter-spacing: -0.04em; line-height: 1.1; color: var(--text-primary);
+      margin-bottom: var(--space-6);
+    }
+    .hero-title span { color: var(--accent-primary); }
+    .hero-desc {
+      font-size: 1.1rem; color: var(--text-secondary); max-width: 600px;
+      margin: 0 auto var(--space-8); line-height: 1.7;
+    }
+    .hero-actions { display: flex; gap: var(--space-4); justify-content: center; flex-wrap: wrap; }
+    .hero-stats {
+      display: flex; justify-content: center; gap: var(--space-10); margin-top: var(--space-16);
+      flex-wrap: wrap;
+    }
+    .hero-stat { text-align: center; }
+    .hero-stat-val { font-size: 1.75rem; font-weight: 700; color: var(--text-primary); letter-spacing: -0.03em; }
+    .hero-stat-label { font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.07em; margin-top: 2px; }
+
+    /* Pipeline section */
+    .section { padding: var(--space-16) 0; }
+    .section-label {
+      text-align: center; font-size: 0.7rem; font-weight: 600; letter-spacing: 0.1em;
+      text-transform: uppercase; color: var(--accent-primary); margin-bottom: var(--space-3);
+    }
+    .section-title { text-align: center; margin-bottom: var(--space-4); }
+    .section-desc { text-align: center; max-width: 520px; margin: 0 auto var(--space-10); }
+
+    .pipeline-grid {
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: var(--space-4); max-width: 960px; margin: 0 auto;
+    }
+    .pipeline-step {
+      background: var(--bg-card); border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-lg); padding: var(--space-5);
+      transition: all var(--transition-base);
+    }
+    .pipeline-step:hover { border-color: var(--accent-primary); transform: translateY(-2px); box-shadow: var(--shadow-accent); }
+    .pipeline-num {
+      width: 28px; height: 28px; border-radius: var(--radius-sm);
+      background: var(--accent-subtle); color: var(--accent-primary);
+      font-size: 0.75rem; font-weight: 700; display: flex; align-items: center; justify-content: center;
+      margin-bottom: var(--space-3);
+    }
+    .pipeline-step h4 { font-size: 0.9rem; color: var(--text-primary); margin-bottom: 4px; }
+    .pipeline-step p  { font-size: 0.8rem; color: var(--text-muted); line-height: 1.5; }
+
+    /* Features */
+    .features-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--space-6); }
+    .feature-card {
+      background: var(--bg-card); border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-lg); padding: var(--space-6);
+    }
+    .feature-icon {
+      width: 40px; height: 40px; border-radius: var(--radius-md);
+      background: var(--accent-subtle); display: flex; align-items: center; justify-content: center;
+      margin-bottom: var(--space-4); color: var(--accent-primary);
+    }
+    .feature-card h3 { font-size: 1rem; margin-bottom: var(--space-2); }
+    .feature-card p { font-size: 0.875rem; color: var(--text-muted); line-height: 1.6; }
+
+    /* CTA */
+    .cta-section {
+      background: var(--bg-surface); border-top: 1px solid var(--border-subtle);
+      border-bottom: 1px solid var(--border-subtle); padding: var(--space-16) 0; text-align: center;
+    }
+
+    /* Footer */
+    footer {
+      padding: var(--space-8) 0; border-top: 1px solid var(--border-subtle);
+      text-align: center; color: var(--text-muted); font-size: 0.8rem;
+    }
+
+    @media (max-width: 768px) {
+      .features-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ── Navbar ─────────────────────────────────────────── -->
+<nav class="navbar landing-navbar">
+  <div class="navbar-inner">
+    <a href="index.html" class="navbar-brand">
+      <div class="navbar-logo">S</div>
+      <span class="navbar-name">SmartResolve AI</span>
+    </a>
+    <nav class="navbar-nav">
+      <a href="#how-it-works" class="nav-link">How It Works</a>
+      <a href="#features" class="nav-link">Features</a>
+    </nav>
+    <div class="navbar-actions">
+      <div id="navbar-user">
+        <a href="login.html" class="btn btn-secondary btn-sm">Login</a>
+        <a href="customer.html" class="btn btn-primary btn-sm" id="get-started-btn">Get Started</a>
+      </div>
+    </div>
+  </div>
+</nav>
+
+<!-- ── Hero ───────────────────────────────────────────── -->
+<section class="hero">
+  <div class="hero-bg"></div>
+  <div class="hero-grid"></div>
+  <div class="hero-content">
+    <div class="hero-label">
+      <svg width="10" height="10" viewBox="0 0 10 10" fill="currentColor"><circle cx="5" cy="5" r="5"/></svg>
+      9-Step AI Pipeline
+    </div>
+    <h1 class="hero-title">
+      Intelligent Support That<br><span>Understands, Resolves &amp; Escalates</span>
+    </h1>
+    <p class="hero-desc">
+      SmartResolve AI combines prompt engineering, policy-grounded reasoning and human escalation to deliver reliable e-commerce customer support.
+    </p>
+    <div class="hero-actions">
+      <a href="customer.html" class="btn btn-primary btn-lg" id="start-convo-btn">Start Conversation</a>
+      <a href="#how-it-works" class="btn btn-secondary btn-lg">How It Works</a>
+    </div>
+    <div class="hero-stats">
+      <div class="hero-stat">
+        <div class="hero-stat-val">9</div>
+        <div class="hero-stat-label">Pipeline Steps</div>
+      </div>
+      <div class="hero-stat">
+        <div class="hero-stat-val">20+</div>
+        <div class="hero-stat-label">Intent Classes</div>
+      </div>
+      <div class="hero-stat">
+        <div class="hero-stat-val">3</div>
+        <div class="hero-stat-label">User Roles</div>
+      </div>
+      <div class="hero-stat">
+        <div class="hero-stat-val">LLM</div>
+        <div class="hero-stat-label">Powered</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── How It Works ───────────────────────────────────── -->
+<section class="section" id="how-it-works">
+  <div class="container">
+    <p class="section-label">How It Works</p>
+    <h2 class="section-title">The SmartResolve AI Pipeline</h2>
+    <p class="section-desc">Every customer message passes through a structured 9-step AI pipeline before a response is generated.</p>
+    <div class="pipeline-grid">
+      <div class="pipeline-step">
+        <div class="pipeline-num">1</div>
+        <h4>Intent Detection</h4>
+        <p>Classifies the customer's message into one of 20 supported intent categories.</p>
+      </div>
+      <div class="pipeline-step">
+        <div class="pipeline-num">2</div>
+        <h4>Sentiment Analysis</h4>
+        <p>Detects the customer's emotional state to calibrate response tone.</p>
+      </div>
+      <div class="pipeline-step">
+        <div class="pipeline-num">3</div>
+        <h4>Urgency Detection</h4>
+        <p>Determines whether the issue is LOW, MEDIUM, HIGH or CRITICAL urgency.</p>
+      </div>
+      <div class="pipeline-step">
+        <div class="pipeline-num">4</div>
+        <h4>Context Extraction</h4>
+        <p>Extracts order IDs, product names, and key details from the message.</p>
+      </div>
+      <div class="pipeline-step">
+        <div class="pipeline-num">5</div>
+        <h4>Policy Retrieval</h4>
+        <p>Retrieves the relevant store policy to ground the AI response in facts.</p>
+      </div>
+      <div class="pipeline-step">
+        <div class="pipeline-num">6</div>
+        <h4>Resolution Decision</h4>
+        <p>Recommends the appropriate resolution: refund, replacement, tracking, etc.</p>
+      </div>
+      <div class="pipeline-step">
+        <div class="pipeline-num">7</div>
+        <h4>Escalation Check</h4>
+        <p>Routes complex or high-risk cases to human agents automatically.</p>
+      </div>
+      <div class="pipeline-step">
+        <div class="pipeline-num">8</div>
+        <h4>Response Generation</h4>
+        <p>Generates a customer-facing response grounded in policy and context.</p>
+      </div>
+      <div class="pipeline-step">
+        <div class="pipeline-num">9</div>
+        <h4>AI Critic Review</h4>
+        <p>Validates the response for accuracy, tone, and policy compliance before delivery.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── Features ───────────────────────────────────────── -->
+<section class="section" id="features" style="background: var(--bg-surface); border-top: 1px solid var(--border-subtle);">
+  <div class="container">
+    <p class="section-label">Features</p>
+    <h2 class="section-title">Built for Production</h2>
+    <p class="section-desc">Every component is designed to handle real e-commerce support scenarios reliably.</p>
+    <div class="features-grid">
+      <div class="feature-card">
+        <div class="feature-icon">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+        </div>
+        <h3>Policy-Grounded Reasoning</h3>
+        <p>Every AI response is verified against store policies stored in the database. No unsupported promises.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+        </div>
+        <h3>Human Escalation</h3>
+        <p>Cases with low AI confidence, CRITICAL urgency, or fraud signals are escalated to human agents automatically.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+        </div>
+        <h3>Analytics Dashboard</h3>
+        <p>Track intent distribution, sentiment trends, escalation rates, and prompt performance with Chart.js.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+        </div>
+        <h3>Prompt Injection Protection</h3>
+        <p>System prompt leak and jailbreak patterns are intercepted before reaching the LLM pipeline.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+        </div>
+        <h3>Prompt Evaluation</h3>
+        <p>Run benchmark test suites to measure intent accuracy, latency, and hallucination rate across prompt versions.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+        </div>
+        <h3>Role-Based Access</h3>
+        <p>Customers, support agents, and admins each have tailored interfaces and API access controls via JWT.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── CTA ─────────────────────────────────────────────── -->
+<section class="cta-section">
+  <div class="container">
+    <h2 style="margin-bottom: var(--space-4);">Ready to try it?</h2>
+    <p style="margin-bottom: var(--space-8); max-width: 440px; margin-left: auto; margin-right: auto;">
+      Log in as a customer to start a support conversation, or as an agent to view escalated cases.
+    </p>
+    <div style="display: flex; gap: var(--space-4); justify-content: center; flex-wrap: wrap;">
+      <a href="login.html" class="btn btn-primary btn-lg">Login</a>
+      <a href="customer.html" class="btn btn-secondary btn-lg">Start as Customer</a>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="container" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:var(--space-4);">
+    <p>SmartResolve AI: Intelligent E-Commerce Customer Support System</p>
+    <div style="display:flex; gap:var(--space-4);">
+      <a href="privacy.html" class="text-sm text-secondary">Privacy Policy</a>
+      <a href="terms.html" class="text-sm text-secondary">Terms &amp; Conditions</a>
+    </div>
+  </div>
+</footer>
+
+<script src="scripts/utils.js"></script>
+<script>
+  // Update CTA buttons based on auth state
+  document.addEventListener('DOMContentLoaded', () => {
+    if (Auth.isLoggedIn()) {
+      const user = Auth.getUser();
+      const navUser = document.getElementById('navbar-user');
+      if (navUser) {
+        let dest = 'customer.html';
+        if (user?.role === 'agent') dest = 'agent-dashboard.html';
+        if (user?.role === 'admin') dest = 'admin.html';
+        navUser.innerHTML = `
+          <span class="text-sm text-secondary">${escapeHtml(user.name)}</span>
+          <a href="${dest}" class="btn btn-primary btn-sm">Dashboard</a>
+          <button class="btn btn-ghost btn-sm" onclick="Auth.logout()">Logout</button>
+        `;
+      }
+    }
+  });
+</script>
+</body>
+</html>

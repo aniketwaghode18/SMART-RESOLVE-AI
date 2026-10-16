@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Privacy Policy | SmartResolve AI</title>
+  <meta name="description" content="Privacy Policy for SmartResolve AI customer support platform.">
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='8' fill='%233d7fff'/><text y='22' x='6' font-size='18' font-family='sans-serif' fill='white' font-weight='bold'>S</text></svg>">
+  <link rel="stylesheet" href="styles/main.css">
+  <style>
+    .legal-layout {
+      max-width: 860px;
+      margin: 0 auto;
+      padding: var(--space-8) var(--space-6);
+      padding-top: calc(var(--header-height) + var(--space-8));
+    }
+    .legal-content h2 {
+      margin-top: var(--space-8);
+      margin-bottom: var(--space-3);
+      font-size: 1.25rem;
+      color: var(--text-primary);
+    }
+    .legal-content p, .legal-content ul {
+      margin-bottom: var(--space-4);
+      color: var(--text-secondary);
+      line-height: 1.8;
+    }
+    .legal-content ul {
+      padding-left: var(--space-6);
+      list-style-type: disc;
+    }
+    .legal-content li {
+      margin-bottom: var(--space-2);
+    }
+    .legal-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-lg);
+      padding: var(--space-8);
+      margin-top: var(--space-6);
+    }
+  </style>
+</head>
+<body>
+
+<nav class="navbar">
+  <div class="navbar-inner">
+    <a href="index.html" class="navbar-brand">
+      <div class="navbar-logo">S</div>
+      <span class="navbar-name">SmartResolve AI</span>
+    </a>
+    <nav class="navbar-nav">
+      <a href="index.html" class="nav-link">Home</a>
+      <a href="customer.html" class="nav-link">Support Chat</a>
+      <a href="orders.html" class="nav-link">My Orders</a>
+    </nav>
+    <div class="navbar-actions" id="navbar-user"></div>
+  </div>
+</nav>
+
+<div class="legal-layout">
+  <div class="page-header">
+    <h1 class="page-title">Privacy Policy</h1>
+    <p class="page-subtitle">Effective Date: October 16, 2026. Last updated: October 16, 2026.</p>
+  </div>
+
+  <div class="legal-card legal-content">
+    <h2>1. Information We Collect</h2>
+    <p>SmartResolve AI collects information necessary to provide e-commerce customer support, process inquiries, and coordinate ticket escalations:</p>
+    <ul>
+      <li><strong>Account Details:</strong> Name, email address, password hashes, and membership level.</li>
+      <li><strong>Order Information:</strong> Order identifiers, product descriptions, transaction amounts, delivery dates, and tracking status.</li>
+      <li><strong>Communication Records:</strong> Customer messages, agent responses, conversation timestamps, and AI analysis records (including intent classifications and resolution metadata).</li>
+    </ul>
+
+    <h2>2. How We Use Information</h2>
+    <p>We process collected data strictly to operate our intelligent support platform:</p>
+    <ul>
+      <li>Classifying customer inquiries to match applicable store policies and order records.</li>
+      <li>Drafting policy-grounded resolution proposals and answering support questions.</li>
+      <li>Escalating complex, high-urgency, or ambiguous inquiries to human support agents.</li>
+      <li>Auditing system accuracy and tracking prompt performance benchmarks.</li>
+    </ul>
+
+    <h2>3. Data Protection and Security</h2>
+    <p>We implement technical and organizational controls to protect your data:</p>
+    <ul>
+      <li>Cryptographic hashing of passwords using bcrypt with salt rounds.</li>
+      <li>Stateless token authentication using signed JSON Web Tokens (JWT).</li>
+      <li>Strict redaction of sensitive credentials and secrets in server logs.</li>
+      <li>Input sanitization and safety guardrails to intercept prompt injection attempts.</li>
+    </ul>
+
+    <h2>4. Data Sharing and Third-Party Services</h2>
+    <p>Inquiry text is submitted to certified Large Language Model providers (Google Cloud Gemini API or OpenAI API) solely for real-time inference. Your data is not sold or distributed to third-party data brokers.</p>
+
+    <h2>5. Customer Rights</h2>
+    <p>Customers have the right to inspect their order history, view active and past support conversations, and request account termination. Inquiries may be directed through our customer support interface.</p>
+
+    <h2>6. Contact Us</h2>
+    <p>For questions or privacy concerns regarding SmartResolve AI, contact support at privacy@smartresolve.local.</p>
+  </div>
+</div>
+
+<footer style="margin-top: var(--space-12); padding: var(--space-6) 0; border-top: 1px solid var(--border-subtle);">
+  <div class="container" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:var(--space-4);">
+    <p>SmartResolve AI: Intelligent E-Commerce Customer Support System</p>
+    <div style="display:flex; gap:var(--space-4);">
+      <a href="privacy.html" class="text-sm text-secondary">Privacy Policy</a>
+      <a href="terms.html" class="text-sm text-secondary">Terms &amp; Conditions</a>
+    </div>
+  </div>
+</footer>
+
+<script src="scripts/utils.js"></script>
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    if (Auth.isLoggedIn()) {
+      const user = Auth.getUser();
+      const navUser = document.getElementById('navbar-user');
+      if (navUser) {
+        navUser.innerHTML = `
+          <span class="text-sm text-secondary">${escapeHtml(user.name)}</span>
+          <a href="customer.html" class="btn btn-primary btn-sm">Chat</a>
+          <button class="btn btn-ghost btn-sm" onclick="Auth.logout()">Logout</button>
+        `;
+      }
+    } else {
+      const navUser = document.getElementById('navbar-user');
+      if (navUser) {
+        navUser.innerHTML = `<a href="login.html" class="btn btn-primary btn-sm">Login</a>`;
+      }
+    }
+  });
+</script>
+</body>
+</html>

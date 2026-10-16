@@ -14,6 +14,12 @@ const { errorMiddleware, notFoundMiddleware } = require('./middleware/errorMiddl
 // Import routes
 const authRoutes = require('./routes/authRoutes');
 const supportRoutes = require('./routes/supportRoutes');
+const orderRoutes = require('./routes/orderRoutes');
+const conversationRoutes = require('./routes/conversationRoutes');
+const policyRoutes = require('./routes/policyRoutes');
+const escalationRoutes = require('./routes/escalationRoutes');
+const analyticsRoutes = require('./routes/analyticsRoutes');
+const evaluationRoutes = require('./routes/evaluationRoutes');
 
 // Initialize Express
 const app = express();
@@ -62,14 +68,12 @@ app.get('/health', (req, res) => {
 // ─── API Routes ──────────────────────────────────────────────────────────────
 app.use('/api/auth', authRoutes);
 app.use('/api/support', supportRoutes);
-
-// Placeholder routes for Phase 3 (will be added incrementally)
-// app.use('/api/orders', orderRoutes);
-// app.use('/api/conversations', conversationRoutes);
-// app.use('/api/policies', policyRoutes);
-// app.use('/api/escalations', escalationRoutes);
-// app.use('/api/analytics', analyticsRoutes);
-// app.use('/api/evaluation', evaluationRoutes);
+app.use('/api/orders', orderRoutes);
+app.use('/api/conversations', conversationRoutes);
+app.use('/api/policies', policyRoutes);
+app.use('/api/escalations', escalationRoutes);
+app.use('/api/analytics', analyticsRoutes);
+app.use('/api/evaluation', evaluationRoutes);
 
 // ─── SPA Fallback ────────────────────────────────────────────────────────────
 app.get('*', (req, res, next) => {

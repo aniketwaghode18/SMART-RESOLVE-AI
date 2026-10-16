@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Prompt Evaluation | SmartResolve AI</title>
+  <meta name="description" content="Benchmark and evaluate AI prompt performance across intent accuracy, sentiment accuracy, and response quality.">
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='8' fill='%233d7fff'/><text y='22' x='6' font-size='18' font-family='sans-serif' fill='white' font-weight='bold'>S</text></svg>">
+  <link rel="stylesheet" href="styles/main.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <style>
+    .eval-metrics-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--space-4); margin-bottom: var(--space-8); }
+    .metric-card { background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: var(--radius-lg); padding: var(--space-5); text-align: center; }
+    .metric-card .metric-num { font-size: 2rem; font-weight: 700; color: var(--text-primary); letter-spacing: -0.03em; }
+    .metric-card .metric-name { font-size: 0.7rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.07em; color: var(--text-muted); margin-top: 4px; }
+    .metric-card .metric-sub { font-size: 0.75rem; color: var(--text-secondary); margin-top: 4px; }
+
+    .run-panel { background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: var(--radius-lg); padding: var(--space-6); margin-bottom: var(--space-8); }
+    .run-panel h2 { font-size: 1rem; font-weight: 600; margin-bottom: var(--space-4); }
+    .run-status { display: flex; align-items: center; gap: var(--space-3); padding: var(--space-4); background: var(--bg-elevated); border-radius: var(--radius-md); margin-top: var(--space-4); font-size: 0.875rem; color: var(--text-secondary); }
+
+    .chart-row { display: grid; grid-template-columns: repeat(2, 1fr); gap: var(--space-6); margin-bottom: var(--space-8); }
+    .chart-card { background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: var(--radius-lg); padding: var(--space-5); }
+    .chart-card h3 { font-size: 0.875rem; font-weight: 600; margin-bottom: var(--space-4); }
+    .chart-container { height: 220px; position: relative; }
+
+    .results-section { margin-top: var(--space-4); }
+    .results-section h2 { font-size: 1rem; font-weight: 600; margin-bottom: var(--space-4); }
+    .test-case-row td { vertical-align: middle; }
+    .result-pass { color: var(--success); font-weight: 600; }
+    .result-fail { color: var(--danger); font-weight: 600; }
+
+    @media (max-width: 900px) { .eval-metrics-grid { grid-template-columns: repeat(2,1fr); } .chart-row { grid-template-columns: 1fr; } }
+    @media (max-width: 500px) { .eval-metrics-grid { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+
+<nav class="navbar">
+  <div class="navbar-inner">
+    <a href="index.html" class="navbar-brand">
+      <div class="navbar-logo">S</div>
+      <span class="navbar-name">SmartResolve AI</span>
+    </a>
+    <div class="navbar-actions" id="navbar-user"></div>
+  </div>
+</nav>
+
+<div class="app-layout">
+  <aside class="sidebar">
+    <nav class="sidebar-nav">
+      <p class="sidebar-section-label">Admin</p>
+      <a href="admin.html" class="sidebar-link">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+        Dashboard
+      </a>
+      <a href="analytics.html" class="sidebar-link">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+        Analytics
+      </a>
+      <a href="policies.html" class="sidebar-link">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+        Policies
+      </a>
+      <a href="prompt-evaluation.html" class="sidebar-link active">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+        Evaluation
+      </a>
+    </nav>
+  </aside>
+
+  <main class="main-content">
+    <div class="page-header">
+      <h1 class="page-title">Prompt Engineering Evaluation</h1>
+      <p class="page-subtitle">Run benchmark test suites to measure accuracy, latency, and hallucination rate.</p>
+    </div>
+
+    <!-- Run Panel -->
+    <div class="run-panel">
+      <h2>Run Evaluation Benchmark</h2>
+      <p class="text-secondary text-sm mb-4">
+        Executes a predefined test suite against the live AI pipeline. Each test case sends a message and compares the actual output against expected values.
+      </p>
+      <div style="display:flex; align-items:center; gap:var(--space-3); flex-wrap:wrap;">
+        <select class="form-select" style="width:auto;" id="eval-mode">
+          <option value="demo">Demo Mode (fast, no API usage)</option>
+          <option value="live">Live LLM Mode</option>
+        </select>
+        <button class="btn btn-primary" onclick="runEvaluation()" id="run-btn">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+          Run Benchmark
+        </button>
+      </div>
+      <div class="run-status" id="run-status" style="display:none;">
+        <span class="spinner" id="run-spinner" style="display:none;"></span>
+        <span id="run-status-text">Ready to run.</span>
+      </div>
+    </div>
+
+    <!-- Metric Cards -->
+    <div class="eval-metrics-grid" id="metrics-grid" style="display:none;">
+      <div class="metric-card">
+        <div class="metric-num" id="m-intent">--</div>
+        <div class="metric-name">Intent Accuracy</div>
+        <div class="metric-sub">Correct classifications</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-num" id="m-sentiment">--</div>
+        <div class="metric-name">Sentiment Accuracy</div>
+        <div class="metric-sub">Correct sentiment detection</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-num" id="m-policy">--</div>
+        <div class="metric-name">Policy Compliance</div>
+        <div class="metric-sub">Policy-grounded responses</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-num" id="m-latency">--</div>
+        <div class="metric-name">Avg Latency</div>
+        <div class="metric-sub">Per test case</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-num" id="m-hallucination">--</div>
+        <div class="metric-name">Hallucination Rate</div>
+        <div class="metric-sub">Factual errors detected</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-num" id="m-quality">--</div>
+        <div class="metric-name">Response Quality</div>
+        <div class="metric-sub">Avg quality score</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-num" id="m-escalation">--</div>
+        <div class="metric-name">Escalation Accuracy</div>
+        <div class="metric-sub">Correct escalation decisions</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-num" id="m-total">--</div>
+        <div class="metric-name">Test Cases</div>
+        <div class="metric-sub">Total cases run</div>
+      </div>
+    </div>
+
+    <!-- Charts -->
+    <div class="chart-row" id="charts-section" style="display:none;">
+      <div class="chart-card">
+        <h3>Accuracy by Category</h3>
+        <div class="chart-container"><canvas id="eval-chart-accuracy"></canvas></div>
+      </div>
+      <div class="chart-card">
+        <h3>Latency Distribution</h3>
+        <div class="chart-container"><canvas id="eval-chart-latency"></canvas></div>
+      </div>
+    </div>
+
+    <!-- Results Table -->
+    <div class="results-section" id="results-section" style="display:none;">
+      <h2>Test Case Results</h2>
+      <div class="table-wrapper">
+        <table>
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Input</th>
+              <th>Expected Intent</th>
+              <th>Actual Intent</th>
+              <th>Intent</th>
+              <th>Expected Sentiment</th>
+              <th>Actual Sentiment</th>
+              <th>Sentiment</th>
+              <th>Latency</th>
+            </tr>
+          </thead>
+          <tbody id="results-body"></tbody>
+        </table>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<div class="toast-container"></div>
+
+<script src="scripts/utils.js"></script>
+<script>
+  let evalCharts = {};
+
+  document.addEventListener('DOMContentLoaded', () => {
+    Auth.requireRole('admin');
+  });
+
+  async function runEvaluation() {
+    const btn    = document.getElementById('run-btn');
+    const status = document.getElementById('run-status');
+    const spinner = document.getElementById('run-spinner');
+    const statusText = document.getElementById('run-status-text');
+    const mode = document.getElementById('eval-mode').value;
+
+    btn.disabled = true;
+    status.style.display = 'flex';
+    spinner.style.display = 'inline-block';
+    statusText.textContent = 'Running benchmark suite... This may take a moment.';
+    Toast.info('Evaluation started. Please wait.');
+
+    try {
+      const res = await Api.post('/evaluation/run', { mode });
+      const data = res.data || res.result || res;
+
+      spinner.style.display = 'none';
+      statusText.textContent = `Completed ${data.totalCases || '--'} test cases in ${data.totalTime ? (data.totalTime / 1000).toFixed(1) + 's' : 'N/A'}.`;
+
+      renderMetrics(data);
+      renderEvalCharts(data);
+      renderResultsTable(data.results || []);
+
+      Toast.success('Evaluation complete!');
+    } catch (err) {
+      spinner.style.display = 'none';
+      statusText.textContent = 'Evaluation failed: ' + err.message;
+      Toast.error(err.message);
+    } finally {
+      btn.disabled = false;
+    }
+  }
+
+  function renderMetrics(data) {
+    const metrics = data.metrics || data;
+    document.getElementById('metrics-grid').style.display = 'grid';
+
+    const fmt = (v) => v != null ? (typeof v === 'number' && v <= 1 ? pct(v) : v) : '--';
+
+    document.getElementById('m-intent').textContent      = fmt(metrics.intentAccuracy);
+    document.getElementById('m-sentiment').textContent   = fmt(metrics.sentimentAccuracy);
+    document.getElementById('m-policy').textContent      = fmt(metrics.policyCompliance);
+    document.getElementById('m-latency').textContent     = metrics.avgLatency ? `${Math.round(metrics.avgLatency)}ms` : '--';
+    document.getElementById('m-hallucination').textContent = fmt(metrics.hallucinationRate);
+    document.getElementById('m-quality').textContent    = fmt(metrics.avgResponseQuality);
+    document.getElementById('m-escalation').textContent  = fmt(metrics.escalationAccuracy);
+    document.getElementById('m-total').textContent       = data.totalCases || metrics.totalCases || '--';
+  }
+
+  function destroyChart(id) { if (evalCharts[id]) { evalCharts[id].destroy(); delete evalCharts[id]; } }
+
+  function renderEvalCharts(data) {
+    document.getElementById('charts-section').style.display = 'grid';
+    const metrics = data.metrics || data;
+
+    // Chart 1: Accuracy by category
+    destroyChart('acc');
+    const accCtx = document.getElementById('eval-chart-accuracy')?.getContext('2d');
+    if (accCtx) {
+      const labels = ['Intent', 'Sentiment', 'Policy', 'Escalation', 'Response Quality'];
+      const values = [
+        (metrics.intentAccuracy || 0) * 100,
+        (metrics.sentimentAccuracy || 0) * 100,
+        (metrics.policyCompliance || 0) * 100,
+        (metrics.escalationAccuracy || 0) * 100,
+        (metrics.avgResponseQuality || 0) * 100,
+      ];
+      evalCharts['acc'] = new Chart(accCtx, {
+        type: 'bar',
+        data: { labels, datasets: [{ label: 'Score (%)', data: values, backgroundColor: CHART_COLORS, borderRadius: 4 }] },
+        options: { ...CHART_DEFAULTS, plugins: { ...CHART_DEFAULTS.plugins, legend: { display: false } }, scales: { ...CHART_DEFAULTS.scales, y: { ...CHART_DEFAULTS.scales.y, min: 0, max: 100 } } }
+      });
+    }
+
+    // Chart 2: Latency per case
+    const results = data.results || [];
+    destroyChart('lat');
+    const latCtx = document.getElementById('eval-chart-latency')?.getContext('2d');
+    if (latCtx && results.length) {
+      evalCharts['lat'] = new Chart(latCtx, {
+        type: 'bar',
+        data: {
+          labels: results.map((_, i) => `#${i + 1}`),
+          datasets: [{ label: 'Latency (ms)', data: results.map(r => r.latency || 0), backgroundColor: '#3d7fffcc', borderRadius: 4 }]
+        },
+        options: { ...CHART_DEFAULTS, plugins: { ...CHART_DEFAULTS.plugins, legend: { display: false } } }
+      });
+    }
+  }
+
+  function renderResultsTable(results) {
+    document.getElementById('results-section').style.display = '';
+    const tbody = document.getElementById('results-body');
+    if (!results.length) {
+      tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;color:var(--text-muted);padding:var(--space-8);">No results</td></tr>';
+      return;
+    }
+    tbody.innerHTML = results.map((r, i) => {
+      const intentPass    = r.intentCorrect    !== false;
+      const sentimentPass = r.sentimentCorrect !== false;
+      return `
+        <tr class="test-case-row">
+          <td>${i + 1}</td>
+          <td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${escapeHtml(r.input)}">${escapeHtml(r.input)}</td>
+          <td>${escapeHtml(r.expectedIntent || 'N/A')}</td>
+          <td>${escapeHtml(r.actualIntent || 'N/A')}</td>
+          <td><span class="${intentPass ? 'result-pass' : 'result-fail'}">${intentPass ? 'Pass' : 'Fail'}</span></td>
+          <td>${escapeHtml(r.expectedSentiment || 'N/A')}</td>
+          <td>${escapeHtml(r.actualSentiment || 'N/A')}</td>
+          <td><span class="${sentimentPass ? 'result-pass' : 'result-fail'}">${sentimentPass ? 'Pass' : 'Fail'}</span></td>
+          <td>${r.latency ? r.latency + 'ms' : 'N/A'}</td>
+        </tr>
+      `;
+    }).join('');
+  }
+</script>
+</body>
+</html>

@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Terms and Conditions | SmartResolve AI</title>
+  <meta name="description" content="Terms and Conditions of use for the SmartResolve AI customer support platform.">
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='8' fill='%233d7fff'/><text y='22' x='6' font-size='18' font-family='sans-serif' fill='white' font-weight='bold'>S</text></svg>">
+  <link rel="stylesheet" href="styles/main.css">
+  <style>
+    .legal-layout {
+      max-width: 860px;
+      margin: 0 auto;
+      padding: var(--space-8) var(--space-6);
+      padding-top: calc(var(--header-height) + var(--space-8));
+    }
+    .legal-content h2 {
+      margin-top: var(--space-8);
+      margin-bottom: var(--space-3);
+      font-size: 1.25rem;
+      color: var(--text-primary);
+    }
+    .legal-content p, .legal-content ul {
+      margin-bottom: var(--space-4);
+      color: var(--text-secondary);
+      line-height: 1.8;
+    }
+    .legal-content ul {
+      padding-left: var(--space-6);
+      list-style-type: disc;
+    }
+    .legal-content li {
+      margin-bottom: var(--space-2);
+    }
+    .legal-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-lg);
+      padding: var(--space-8);
+      margin-top: var(--space-6);
+    }
+  </style>
+</head>
+<body>
+
+<nav class="navbar">
+  <div class="navbar-inner">
+    <a href="index.html" class="navbar-brand">
+      <div class="navbar-logo">S</div>
+      <span class="navbar-name">SmartResolve AI</span>
+    </a>
+    <nav class="navbar-nav">
+      <a href="index.html" class="nav-link">Home</a>
+      <a href="customer.html" class="nav-link">Support Chat</a>
+      <a href="orders.html" class="nav-link">My Orders</a>
+    </nav>
+    <div class="navbar-actions" id="navbar-user"></div>
+  </div>
+</nav>
+
+<div class="legal-layout">
+  <div class="page-header">
+    <h1 class="page-title">Terms and Conditions</h1>
+    <p class="page-subtitle">Effective Date: October 16, 2026. Last updated: October 16, 2026.</p>
+  </div>
+
+  <div class="legal-card legal-content">
+    <h2>1. Acceptance of Terms</h2>
+    <p>By accessing or using the SmartResolve AI customer support service, you agree to be bound by these Terms and Conditions and our Privacy Policy. If you disagree with any portion of these terms, you must discontinue using the platform.</p>
+
+    <h2>2. Description of Service</h2>
+    <p>SmartResolve AI provides an automated and agent-assisted customer support service for e-commerce transactions. The platform classifies support inquiries, evaluates order status against published store policies, and provides resolutions or escalates cases to human agents.</p>
+
+    <h2>3. User Responsibilities</h2>
+    <p>Users of SmartResolve AI agree to:</p>
+    <ul>
+      <li>Provide accurate order identifiers and inquiry descriptions.</li>
+      <li>Refrain from attempting prompt injections, jailbreaks, or unauthorized system access.</li>
+      <li>Maintain the confidentiality of their account authentication credentials.</li>
+    </ul>
+
+    <h2>4. Automated Support and Human Escalation</h2>
+    <p>While our multi-agent AI pipeline adheres strictly to published store policies and critic validation checks, automated responses are subject to human review. Cases involving disputes, complex warranty claims, or high-value exceptions are routed to human agents for final determination.</p>
+
+    <h2>5. Store Policies Precedence</h2>
+    <p>Support outcomes regarding returns, cancellations, refunds, and replacements are governed by the active store policies registered in the system. The AI resolution engine cannot override policy rules without human agent approval.</p>
+
+    <h2>6. Changes to Terms</h2>
+    <p>We reserve the right to modify these Terms and Conditions at any time. Continued use of SmartResolve AI following published changes signifies acceptance of the updated terms.</p>
+
+    <h2>7. Contact Information</h2>
+    <p>For questions regarding these Terms and Conditions, please reach out to terms@smartresolve.local.</p>
+  </div>
+</div>
+
+<footer style="margin-top: var(--space-12); padding: var(--space-6) 0; border-top: 1px solid var(--border-subtle);">
+  <div class="container" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:var(--space-4);">
+    <p>SmartResolve AI: Intelligent E-Commerce Customer Support System</p>
+    <div style="display:flex; gap:var(--space-4);">
+      <a href="privacy.html" class="text-sm text-secondary">Privacy Policy</a>
+      <a href="terms.html" class="text-sm text-secondary">Terms &amp; Conditions</a>
+    </div>
+  </div>
+</footer>
+
+<script src="scripts/utils.js"></script>
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    if (Auth.isLoggedIn()) {
+      const user = Auth.getUser();
+      const navUser = document.getElementById('navbar-user');
+      if (navUser) {
+        navUser.innerHTML = `
+          <span class="text-sm text-secondary">${escapeHtml(user.name)}</span>
+          <a href="customer.html" class="btn btn-primary btn-sm">Chat</a>
+          <button class="btn btn-ghost btn-sm" onclick="Auth.logout()">Logout</button>
+        `;
+      }
+    } else {
+      const navUser = document.getElementById('navbar-user');
+      if (navUser) {
+        navUser.innerHTML = `<a href="login.html" class="btn btn-primary btn-sm">Login</a>`;
+      }
+    }
+  });
+</script>
+</body>
+</html>

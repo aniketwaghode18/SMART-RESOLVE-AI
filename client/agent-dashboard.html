@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Agent Dashboard | SmartResolve AI</title>
+  <meta name="description" content="Support agent dashboard for reviewing and managing escalated customer cases.">
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='8' fill='%233d7fff'/><text y='22' x='6' font-size='18' font-family='sans-serif' fill='white' font-weight='bold'>S</text></svg>">
+  <link rel="stylesheet" href="styles/main.css">
+  <style>
+    .escalation-row td:first-child { font-family: var(--font-mono); font-size: 0.8rem; }
+    .customer-cell { font-weight: 500; color: var(--text-primary); }
+    .reason-cell { max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  </style>
+</head>
+<body>
+
+<!-- Navbar -->
+<nav class="navbar">
+  <div class="navbar-inner">
+    <a href="index.html" class="navbar-brand">
+      <div class="navbar-logo">S</div>
+      <span class="navbar-name">SmartResolve AI</span>
+    </a>
+    <div class="navbar-actions" id="navbar-user"></div>
+  </div>
+</nav>
+
+<div class="app-layout">
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <nav class="sidebar-nav">
+      <p class="sidebar-section-label">Agent</p>
+      <a href="agent-dashboard.html" class="sidebar-link active" id="nav-dashboard">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+        Dashboard
+      </a>
+      <a href="agent-dashboard.html#escalations" class="sidebar-link" id="nav-escalations">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+        Escalations
+      </a>
+      <a href="analytics.html" class="sidebar-link">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+        Analytics
+      </a>
+      <a href="policies.html" class="sidebar-link">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+        Policies
+      </a>
+    </nav>
+  </aside>
+
+  <main class="main-content">
+    <!-- Page Header -->
+    <div class="page-header flex justify-between items-center">
+      <div>
+        <h1 class="page-title">Agent Dashboard</h1>
+        <p class="page-subtitle">Manage escalated cases and customer conversations.</p>
+      </div>
+      <button class="btn btn-secondary btn-sm" onclick="refreshAll()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+        Refresh
+      </button>
+    </div>
+
+    <!-- Stats -->
+    <div class="grid grid-4 mb-8" id="stats-grid">
+      <div class="stat-card">
+        <div class="stat-icon" style="background:var(--info-bg); color:var(--info);">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+        </div>
+        <div class="stat-label">Total Cases</div>
+        <div class="stat-value" id="stat-total">--</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon" style="background:var(--success-bg); color:var(--success);">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+        </div>
+        <div class="stat-label">Resolved</div>
+        <div class="stat-value" id="stat-resolved">--</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon" style="background:var(--danger-bg); color:var(--danger);">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/></svg>
+        </div>
+        <div class="stat-label">Escalated</div>
+        <div class="stat-value" id="stat-escalated">--</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon" style="background:var(--accent-subtle); color:var(--accent-primary);">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+        </div>
+        <div class="stat-label">Avg Confidence</div>
+        <div class="stat-value" id="stat-confidence">--</div>
+      </div>
+    </div>
+
+    <!-- Escalated Cases Table -->
+    <div id="escalations">
+      <div class="flex justify-between items-center mb-4">
+        <h2 style="font-size:1.1rem;">Escalated Cases</h2>
+        <div class="flex gap-2">
+          <select class="form-select" style="width:auto; font-size:0.8rem;" id="esc-status-filter" onchange="filterEscalations()">
+            <option value="">All Statuses</option>
+            <option value="OPEN">Open</option>
+            <option value="IN_PROGRESS">In Progress</option>
+            <option value="RESOLVED">Resolved</option>
+            <option value="CLOSED">Closed</option>
+          </select>
+          <select class="form-select" style="width:auto; font-size:0.8rem;" id="esc-priority-filter" onchange="filterEscalations()">
+            <option value="">All Priorities</option>
+            <option value="CRITICAL">Critical</option>
+            <option value="HIGH">High</option>
+            <option value="MEDIUM">Medium</option>
+            <option value="LOW">Low</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="table-wrapper">
+        <table id="escalations-table">
+          <thead>
+            <tr>
+              <th>Case ID</th>
+              <th>Customer</th>
+              <th>Intent</th>
+              <th>Sentiment</th>
+              <th>Priority</th>
+              <th>Confidence</th>
+              <th>Reason</th>
+              <th>Status</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody id="escalations-body">
+            <tr><td colspan="9" style="text-align:center;padding:var(--space-8);color:var(--text-muted);">Loading...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<div class="toast-container"></div>
+
+<script src="scripts/utils.js"></script>
+<script>
+  let allEscalations = [];
+  let analyticsData = null;
+
+  document.addEventListener('DOMContentLoaded', async () => {
+    Auth.requireRole('agent');
+    await Promise.all([loadEscalations(), loadAnalytics()]);
+  });
+
+  async function refreshAll() {
+    await Promise.all([loadEscalations(), loadAnalytics()]);
+    Toast.info('Dashboard refreshed');
+  }
+
+  async function loadAnalytics() {
+    try {
+      const res = await Api.get('/analytics');
+      analyticsData = res.data || res;
+      updateStats(analyticsData);
+    } catch (err) {
+      console.error('Analytics load failed', err);
+    }
+  }
+
+  function updateStats(data) {
+    const overview = data?.overview || {};
+    document.getElementById('stat-total').textContent     = overview.totalConversations || '--';
+    document.getElementById('stat-resolved').textContent  = overview.resolvedAutomatically || '--';
+    document.getElementById('stat-escalated').textContent = overview.humanEscalations || '--';
+    document.getElementById('stat-confidence').textContent = overview.avgConfidence != null ? overview.avgConfidence + '%' : '--';
+  }
+
+  async function loadEscalations() {
+    try {
+      const res = await Api.get('/escalations?limit=100');
+      allEscalations = res.data || res.escalations || [];
+      filterEscalations();
+    } catch (err) {
+      document.getElementById('escalations-body').innerHTML = `<tr><td colspan="9" style="text-align:center;color:var(--danger);">${escapeHtml(err.message)}</td></tr>`;
+    }
+  }
+
+  function filterEscalations() {
+    const statusF   = document.getElementById('esc-status-filter').value;
+    const priorityF = document.getElementById('esc-priority-filter').value;
+    const filtered  = allEscalations.filter(e =>
+      (!statusF   || e.status   === statusF)   &&
+      (!priorityF || e.priority === priorityF)
+    );
+    renderEscalations(filtered);
+  }
+
+  function renderEscalations(list) {
+    const tbody = document.getElementById('escalations-body');
+    if (!list.length) {
+      tbody.innerHTML = `<tr><td colspan="9" style="text-align:center;padding:var(--space-8);color:var(--text-muted);">No escalations found</td></tr>`;
+      return;
+    }
+    tbody.innerHTML = list.map(e => {
+      const analysis = e.lastAnalysis || {};
+      const confidence = analysis.intentConfidence ?? analysis.confidence;
+      return `
+        <tr class="escalation-row">
+          <td>${escapeHtml(e.caseId || e._id?.slice(-8) || 'N/A')}</td>
+          <td class="customer-cell">${escapeHtml(e.customerId?.name || 'Customer')}</td>
+          <td>${escapeHtml(analysis.intent || 'N/A')}</td>
+          <td><span style="color:${sentimentColor(analysis.sentiment)}">${escapeHtml(analysis.sentiment || 'N/A')}</span></td>
+          <td><span class="badge badge-${e.priority || 'LOW'}">${escapeHtml(e.priority || 'N/A')}</span></td>
+          <td>${confidence != null ? pct(confidence) : 'N/A'}</td>
+          <td class="reason-cell" title="${escapeHtml(e.reason || '')}">${escapeHtml(e.reason || 'N/A')}</td>
+          <td><span class="badge badge-${badgeClass(e.status)}">${escapeHtml(e.status || 'N/A')}</span></td>
+          <td>
+            <a href="conversation.html?escalationId=${escapeHtml(e._id)}&conversationId=${escapeHtml(e.conversationId?._id || e.conversationId || '')}"
+               class="btn btn-secondary btn-sm">View</a>
+          </td>
+        </tr>
+      `;
+    }).join('');
+  }
+</script>
+</body>
+</html>

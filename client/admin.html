@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Dashboard | SmartResolve AI</title>
+  <meta name="description" content="Admin control panel for SmartResolve AI: manage conversations, policies, analytics, and system health.">
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='8' fill='%233d7fff'/><text y='22' x='6' font-size='18' font-family='sans-serif' fill='white' font-weight='bold'>S</text></svg>">
+  <link rel="stylesheet" href="styles/main.css">
+  <style>
+    .admin-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--space-4); margin-bottom: var(--space-8); }
+    .quick-links { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--space-4); margin-bottom: var(--space-8); }
+    .quick-link-card {
+      background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: var(--radius-lg);
+      padding: var(--space-5); display: flex; flex-direction: column; gap: var(--space-3);
+      text-decoration: none; transition: all var(--transition-base); cursor: pointer;
+    }
+    .quick-link-card:hover { border-color: var(--accent-primary); box-shadow: var(--shadow-accent); transform: translateY(-1px); }
+    .quick-link-icon {
+      width: 40px; height: 40px; border-radius: var(--radius-md); display: flex;
+      align-items: center; justify-content: center;
+    }
+    .quick-link-card h3 { font-size: 0.9rem; font-weight: 600; color: var(--text-primary); }
+    .quick-link-card p  { font-size: 0.8rem; color: var(--text-muted); line-height: 1.5; }
+
+    .recent-section { background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: var(--radius-lg); overflow: hidden; }
+    .recent-header  { padding: var(--space-4) var(--space-5); background: var(--bg-elevated); border-bottom: 1px solid var(--border-subtle); display: flex; justify-content: space-between; align-items: center; }
+    .recent-header h3 { font-size: 0.875rem; font-weight: 600; }
+
+    .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-6); }
+
+    @media (max-width: 1024px) { .admin-grid { grid-template-columns: repeat(2,1fr); } .quick-links { grid-template-columns: repeat(2,1fr); } .two-col { grid-template-columns: 1fr; } }
+    @media (max-width: 600px) { .admin-grid { grid-template-columns: 1fr; } .quick-links { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+
+<nav class="navbar">
+  <div class="navbar-inner">
+    <a href="index.html" class="navbar-brand">
+      <div class="navbar-logo">S</div>
+      <span class="navbar-name">SmartResolve AI</span>
+    </a>
+    <div class="navbar-actions" id="navbar-user"></div>
+  </div>
+</nav>
+
+<div class="app-layout">
+  <aside class="sidebar">
+    <nav class="sidebar-nav">
+      <p class="sidebar-section-label">Admin</p>
+      <a href="admin.html" class="sidebar-link active">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+        Dashboard
+      </a>
+      <a href="analytics.html" class="sidebar-link">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+        Analytics
+      </a>
+      <a href="policies.html" class="sidebar-link">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+        Policies
+      </a>
+      <a href="prompt-evaluation.html" class="sidebar-link">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+        Evaluation
+      </a>
+      <p class="sidebar-section-label">Operations</p>
+      <a href="agent-dashboard.html" class="sidebar-link">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+        Agent View
+      </a>
+      <a href="orders.html" class="sidebar-link">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+        Orders
+      </a>
+    </nav>
+  </aside>
+
+  <main class="main-content">
+    <!-- Header -->
+    <div class="page-header flex justify-between items-center">
+      <div>
+        <h1 class="page-title">Admin Dashboard</h1>
+        <p class="page-subtitle" id="admin-greeting">Loading...</p>
+      </div>
+      <div style="display:flex; align-items:center; gap:var(--space-3);">
+        <div id="health-indicator" style="display:flex; align-items:center; gap:var(--space-2); font-size:0.75rem; color:var(--text-muted);">
+          <div style="width:8px;height:8px;border-radius:50%;background:var(--border-default);"></div>
+          Checking...
+        </div>
+        <button class="btn btn-secondary btn-sm" onclick="refreshDashboard()">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+          Refresh
+        </button>
+      </div>
+    </div>
+
+    <!-- Overview Stats -->
+    <div class="admin-grid" id="admin-stats">
+      <div class="stat-card skeleton" style="height:100px;"></div>
+      <div class="stat-card skeleton" style="height:100px;"></div>
+      <div class="stat-card skeleton" style="height:100px;"></div>
+      <div class="stat-card skeleton" style="height:100px;"></div>
+    </div>
+
+    <!-- Quick Links -->
+    <h2 style="font-size:1rem;font-weight:600;margin-bottom:var(--space-4);">Quick Access</h2>
+    <div class="quick-links mb-8">
+      <a href="analytics.html" class="quick-link-card">
+        <div class="quick-link-icon" style="background:var(--info-bg);color:var(--info);">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+        </div>
+        <h3>Analytics</h3>
+        <p>View AI pipeline metrics, intent distribution, and Chart.js visualisations.</p>
+      </a>
+      <a href="policies.html" class="quick-link-card">
+        <div class="quick-link-icon" style="background:var(--success-bg);color:var(--success);">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/></svg>
+        </div>
+        <h3>Policy Manager</h3>
+        <p>Create, edit, and deactivate the policies used by the AI pipeline.</p>
+      </a>
+      <a href="prompt-evaluation.html" class="quick-link-card">
+        <div class="quick-link-icon" style="background:var(--warning-bg);color:var(--warning);">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+        </div>
+        <h3>Prompt Evaluation</h3>
+        <p>Run benchmark tests to measure intent accuracy, latency, and hallucination rate.</p>
+      </a>
+      <a href="agent-dashboard.html" class="quick-link-card">
+        <div class="quick-link-icon" style="background:var(--danger-bg);color:var(--danger);">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/></svg>
+        </div>
+        <h3>Escalations</h3>
+        <p>Review and manage cases that were escalated to human agents.</p>
+      </a>
+      <a href="orders.html" class="quick-link-card">
+        <div class="quick-link-icon" style="background:var(--accent-subtle);color:var(--accent-primary);">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+        </div>
+        <h3>Orders</h3>
+        <p>Browse all customer orders and their current delivery status.</p>
+      </a>
+      <a href="customer.html" class="quick-link-card">
+        <div class="quick-link-icon" style="background:rgba(168,85,247,0.1);color:#a855f7;">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+        </div>
+        <h3>Test Chat</h3>
+        <p>Open the customer chat interface to test the AI pipeline live.</p>
+      </a>
+    </div>
+
+    <!-- Recent Conversations & Escalations -->
+    <div class="two-col">
+      <!-- Recent Conversations -->
+      <div class="recent-section">
+        <div class="recent-header">
+          <h3>Recent Conversations</h3>
+          <a href="analytics.html" class="btn btn-ghost btn-sm">View all</a>
+        </div>
+        <div id="recent-convos">
+          <div style="padding:var(--space-6);text-align:center;color:var(--text-muted);font-size:0.85rem;">Loading...</div>
+        </div>
+      </div>
+
+      <!-- Open Escalations -->
+      <div class="recent-section">
+        <div class="recent-header">
+          <h3>Open Escalations</h3>
+          <a href="agent-dashboard.html" class="btn btn-ghost btn-sm">View all</a>
+        </div>
+        <div id="open-escalations">
+          <div style="padding:var(--space-6);text-align:center;color:var(--text-muted);font-size:0.85rem;">Loading...</div>
+        </div>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<div class="toast-container"></div>
+
+<script src="scripts/utils.js"></script>
+<script>
+  document.addEventListener('DOMContentLoaded', async () => {
+    Auth.requireRole('admin');
+    const user = Auth.getUser();
+    document.getElementById('admin-greeting').textContent = `Welcome back, ${user?.name || 'Admin'}. Here is your system overview.`;
+    await refreshDashboard();
+    checkHealth();
+  });
+
+  async function refreshDashboard() {
+    await Promise.all([loadStats(), loadRecentConversations(), loadOpenEscalations()]);
+  }
+
+  async function checkHealth() {
+    try {
+      const res = await fetch('/health');
+      const data = await res.json();
+      const el = document.getElementById('health-indicator');
+      if (data.success) {
+        el.innerHTML = `<div style="width:8px;height:8px;border-radius:50%;background:var(--success);"></div><span style="color:var(--success);">System Online</span>`;
+      }
+    } catch { /* ignore */ }
+  }
+
+  async function loadStats() {
+    try {
+      const res = await Api.get('/analytics');
+      const ov  = res.overview || res.data?.overview || {};
+      document.getElementById('admin-stats').innerHTML = `
+        <div class="stat-card">
+          <div class="stat-icon" style="background:var(--info-bg);color:var(--info);">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+          </div>
+          <div class="stat-label">Total Conversations</div>
+          <div class="stat-value">${ov.totalConversations ?? '--'}</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon" style="background:var(--success-bg);color:var(--success);">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+          </div>
+          <div class="stat-label">Resolved by AI</div>
+          <div class="stat-value">${ov.resolvedAutomatically ?? '--'}</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon" style="background:var(--danger-bg);color:var(--danger);">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/></svg>
+          </div>
+          <div class="stat-label">Human Escalations</div>
+          <div class="stat-value">${ov.humanEscalations ?? '--'}</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon" style="background:var(--accent-subtle);color:var(--accent-primary);">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/></svg>
+          </div>
+          <div class="stat-label">Avg AI Confidence</div>
+          <div class="stat-value">${ov.avgConfidence != null ? ov.avgConfidence + '%' : '--'}</div>
+        </div>
+      `;
+    } catch (err) { console.error('Stats error', err); }
+  }
+
+  async function loadRecentConversations() {
+    try {
+      const res = await Api.get('/conversations?limit=5');
+      const list = res.conversations || res.data || [];
+      const el = document.getElementById('recent-convos');
+      if (!list.length) {
+        el.innerHTML = '<div style="padding:var(--space-6);text-align:center;color:var(--text-muted);font-size:0.85rem;">No conversations yet.</div>';
+        return;
+      }
+      el.innerHTML = list.map(c => `
+        <div style="padding:var(--space-3) var(--space-5);border-bottom:1px solid var(--border-subtle);display:flex;justify-content:space-between;align-items:center;">
+          <div>
+            <div style="font-size:0.8rem;font-weight:500;color:var(--text-primary);">${escapeHtml(c.customerId?.name || 'Customer')}</div>
+            <div style="font-size:0.7rem;color:var(--text-muted);">${relativeTime(c.updatedAt || c.createdAt)}</div>
+          </div>
+          <span class="badge badge-${badgeClass(c.status)}">${escapeHtml(c.status)}</span>
+        </div>
+      `).join('');
+    } catch (err) { console.error(err); }
+  }
+
+  async function loadOpenEscalations() {
+    try {
+      const res = await Api.get('/escalations?status=OPEN&limit=5');
+      const list = res.escalations || res.data || [];
+      const el = document.getElementById('open-escalations');
+      if (!list.length) {
+        el.innerHTML = '<div style="padding:var(--space-6);text-align:center;color:var(--text-muted);font-size:0.85rem;">No open escalations.</div>';
+        return;
+      }
+      el.innerHTML = list.map(e => `
+        <div style="padding:var(--space-3) var(--space-5);border-bottom:1px solid var(--border-subtle);display:flex;justify-content:space-between;align-items:center;">
+          <div>
+            <div style="font-size:0.8rem;font-weight:500;color:var(--text-primary);">${escapeHtml(e.customerId?.name || 'Customer')}</div>
+            <div style="font-size:0.7rem;color:var(--text-muted);">${escapeHtml(e.reason || 'N/A').slice(0,40)}...</div>
+          </div>
+          <div style="display:flex;gap:var(--space-2);align-items:center;">
+            <span class="badge badge-${e.priority}">${escapeHtml(e.priority)}</span>
+            <a href="conversation.html?escalationId=${escapeHtml(e._id)}" class="btn btn-secondary btn-sm" style="font-size:0.7rem;padding:2px 8px;">View</a>
+          </div>
+        </div>
+      `).join('');
+    } catch (err) { console.error(err); }
+  }
+</script>
+</body>
+</html>

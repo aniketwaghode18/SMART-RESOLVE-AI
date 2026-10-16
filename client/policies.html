@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Policy Manager | SmartResolve AI</title>
+  <meta name="description" content="Manage store policies used by the SmartResolve AI support system.">
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='8' fill='%233d7fff'/><text y='22' x='6' font-size='18' font-family='sans-serif' fill='white' font-weight='bold'>S</text></svg>">
+  <link rel="stylesheet" href="styles/main.css">
+  <style>
+    .policy-grid { display: grid; grid-template-columns: 300px 1fr; gap: var(--space-6); align-items: start; }
+    .policy-list { display: flex; flex-direction: column; gap: var(--space-2); }
+    .policy-item {
+      padding: var(--space-4); background: var(--bg-card); border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-md); cursor: pointer; transition: all var(--transition-fast);
+    }
+    .policy-item:hover { border-color: var(--border-default); }
+    .policy-item.active { border-color: var(--accent-primary); background: var(--accent-subtle); }
+    .policy-item-title { font-size: 0.875rem; font-weight: 600; color: var(--text-primary); margin-bottom: 4px; }
+    .policy-item-meta { font-size: 0.75rem; color: var(--text-muted); }
+    .policy-detail { background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: var(--radius-lg); overflow: hidden; }
+    .policy-detail-header { padding: var(--space-5) var(--space-6); background: var(--bg-elevated); border-bottom: 1px solid var(--border-subtle); display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: var(--space-3); }
+    .policy-detail-body  { padding: var(--space-6); }
+    .policy-content { font-size: 0.9rem; color: var(--text-secondary); line-height: 1.8; white-space: pre-wrap; }
+
+    .modal-backdrop { display: none; }
+
+    @media (max-width: 800px) {
+      .policy-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<nav class="navbar">
+  <div class="navbar-inner">
+    <a href="index.html" class="navbar-brand">
+      <div class="navbar-logo">S</div>
+      <span class="navbar-name">SmartResolve AI</span>
+    </a>
+    <div class="navbar-actions" id="navbar-user"></div>
+  </div>
+</nav>
+
+<div class="app-layout">
+  <aside class="sidebar">
+    <nav class="sidebar-nav">
+      <p class="sidebar-section-label">Admin</p>
+      <a href="admin.html" class="sidebar-link">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+        Dashboard
+      </a>
+      <a href="analytics.html" class="sidebar-link">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+        Analytics
+      </a>
+      <a href="policies.html" class="sidebar-link active">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+        Policies
+      </a>
+      <a href="prompt-evaluation.html" class="sidebar-link">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+        Evaluation
+      </a>
+    </nav>
+  </aside>
+
+  <main class="main-content">
+    <div class="page-header flex justify-between items-center">
+      <div>
+        <h1 class="page-title">Policy Manager</h1>
+        <p class="page-subtitle">Store policies retrieved by the AI support pipeline.</p>
+      </div>
+      <button class="btn btn-primary" onclick="openNewPolicyModal()" id="add-policy-btn">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        Add Policy
+      </button>
+    </div>
+
+    <div class="policy-grid">
+      <!-- Policy List -->
+      <div>
+        <div class="policy-list" id="policy-list">
+          ${[1,2,3,4].map(() => `<div class="skeleton" style="height:70px;border-radius:var(--radius-md);"></div>`).join('')}
+        </div>
+      </div>
+
+      <!-- Policy Detail -->
+      <div class="policy-detail" id="policy-detail">
+        <div style="padding: var(--space-12); text-align:center; color:var(--text-muted);">
+          <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="margin:0 auto var(--space-4); opacity:0.4;"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+          <p>Select a policy to view its content.</p>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- New/Edit Policy Modal -->
+<div class="modal-backdrop" id="policy-modal" onclick="closeModal('policy-modal')">
+  <div class="modal" onclick="event.stopPropagation()">
+    <div class="modal-header">
+      <h3 id="modal-title">Add New Policy</h3>
+      <button class="btn btn-ghost btn-icon" onclick="closeModal('policy-modal')">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="modal-policy-id">
+      <div class="form-group mb-4">
+        <label class="form-label" for="modal-title-input">Title</label>
+        <input class="form-input" type="text" id="modal-title-input" placeholder="e.g. Return Policy">
+      </div>
+      <div class="form-group mb-4">
+        <label class="form-label" for="modal-category">Category</label>
+        <select class="form-select" id="modal-category">
+          <option value="return">Return</option>
+          <option value="refund">Refund</option>
+          <option value="replacement">Replacement</option>
+          <option value="cancellation">Cancellation</option>
+          <option value="shipping">Shipping</option>
+          <option value="payment">Payment</option>
+          <option value="warranty">Warranty</option>
+          <option value="general">General</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="modal-content">Policy Content</label>
+        <textarea class="form-textarea" id="modal-content" rows="8" placeholder="Write the policy content..."></textarea>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('policy-modal')">Cancel</button>
+      <button class="btn btn-primary" onclick="savePolicy()" id="save-policy-btn">Save Policy</button>
+    </div>
+  </div>
+</div>
+
+<!-- Delete Confirm Modal -->
+<div class="modal-backdrop" id="delete-modal" onclick="closeModal('delete-modal')">
+  <div class="modal" onclick="event.stopPropagation()">
+    <div class="modal-header"><h3>Delete Policy</h3></div>
+    <div class="modal-body"><p>Are you sure you want to delete this policy? This action cannot be undone.</p></div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('delete-modal')">Cancel</button>
+      <button class="btn btn-danger" onclick="confirmDelete()" id="confirm-delete-btn">Delete</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast-container"></div>
+
+<script src="scripts/utils.js"></script>
+<script>
+  let policies = [];
+  let selectedPolicy = null;
+  let deleteTargetId = null;
+
+  document.addEventListener('DOMContentLoaded', async () => {
+    Auth.requireRole('admin');
+    await loadPolicies();
+  });
+
+  async function loadPolicies() {
+    try {
+      const res = await Api.get('/policies');
+      policies = res.data || res.policies || [];
+      renderList();
+      if (policies.length) selectPolicy(policies[0]);
+    } catch (err) {
+      Toast.error('Failed to load policies: ' + err.message);
+    }
+  }
+
+  function renderList() {
+    const el = document.getElementById('policy-list');
+    if (!policies.length) {
+      el.innerHTML = '<div style="text-align:center;color:var(--text-muted);padding:var(--space-6);font-size:0.85rem;">No policies found. Add one above.</div>';
+      return;
+    }
+    el.innerHTML = policies.map(p => `
+      <div class="policy-item ${selectedPolicy?._id === p._id ? 'active' : ''}"
+           onclick="selectPolicyById('${p._id}')"
+           id="policy-item-${p._id}">
+        <div class="policy-item-title">${escapeHtml(p.title)}</div>
+        <div class="policy-item-meta">
+          ${escapeHtml(p.category)} &middot; v${p.version || 1}
+          <span class="badge badge-${p.active ? 'success' : 'default'}" style="margin-left:4px;">${p.active ? 'Active' : 'Inactive'}</span>
+        </div>
+      </div>
+    `).join('');
+  }
+
+  function selectPolicyById(id) {
+    const p = policies.find(item => item._id === id);
+    if (p) selectPolicy(p);
+  }
+
+  function selectPolicy(policy) {
+    selectedPolicy = policy;
+    $$('.policy-item').forEach(el => el.classList.remove('active'));
+    const el = document.getElementById(`policy-item-${policy._id}`);
+    if (el) el.classList.add('active');
+
+    document.getElementById('policy-detail').innerHTML = `
+      <div class="policy-detail-header">
+        <div>
+          <h2 style="font-size:1.1rem;">${escapeHtml(policy.title)}</h2>
+          <div style="display:flex;gap:var(--space-2);margin-top:var(--space-2);flex-wrap:wrap;">
+            <span class="chip">${escapeHtml(policy.category)}</span>
+            <span class="chip">v${policy.version || 1}</span>
+            <span class="badge badge-${policy.active ? 'success' : 'default'}">${policy.active ? 'Active' : 'Inactive'}</span>
+          </div>
+        </div>
+        <div style="display:flex;gap:var(--space-2);">
+          <button class="btn btn-secondary btn-sm" onclick="openEditPolicyModal()">Edit</button>
+          <button class="btn btn-danger btn-sm" onclick="promptDelete('${policy._id}')">Delete</button>
+        </div>
+      </div>
+      <div class="policy-detail-body">
+        <div class="policy-content">${escapeHtml(policy.content || 'No content available.')}</div>
+        <div style="margin-top:var(--space-4);font-size:0.75rem;color:var(--text-muted);">
+          Last updated: ${formatDateTime(policy.updatedAt)}
+        </div>
+      </div>
+    `;
+  }
+
+  function openNewPolicyModal() {
+    document.getElementById('modal-title').textContent = 'Add New Policy';
+    document.getElementById('modal-policy-id').value = '';
+    document.getElementById('modal-title-input').value = '';
+    document.getElementById('modal-category').value = 'general';
+    document.getElementById('modal-content').value = '';
+    openModal('policy-modal');
+  }
+
+  function openEditPolicyModal() {
+    if (!selectedPolicy) return;
+    document.getElementById('modal-title').textContent = 'Edit Policy';
+    document.getElementById('modal-policy-id').value = selectedPolicy._id;
+    document.getElementById('modal-title-input').value = selectedPolicy.title;
+    document.getElementById('modal-category').value = selectedPolicy.category;
+    document.getElementById('modal-content').value = selectedPolicy.content;
+    openModal('policy-modal');
+  }
+
+  async function savePolicy() {
+    const id       = document.getElementById('modal-policy-id').value;
+    const title    = document.getElementById('modal-title-input').value.trim();
+    const category = document.getElementById('modal-category').value;
+    const content  = document.getElementById('modal-content').value.trim();
+
+    if (!title || !content) { Toast.warning('Title and content are required.'); return; }
+
+    const btn = document.getElementById('save-policy-btn');
+    btn.disabled = true; btn.textContent = 'Saving...';
+
+    try {
+      if (id) {
+        await Api.put(`/policies/${id}`, { title, category, content });
+        Toast.success('Policy updated.');
+      } else {
+        await Api.post('/policies', { title, category, content });
+        Toast.success('Policy created.');
+      }
+      closeModal('policy-modal');
+      await loadPolicies();
+    } catch (err) {
+      Toast.error(err.message);
+    } finally {
+      btn.disabled = false; btn.textContent = 'Save Policy';
+    }
+  }
+
+  function promptDelete(id) {
+    deleteTargetId = id;
+    openModal('delete-modal');
+  }
+
+  async function confirmDelete() {
+    if (!deleteTargetId) return;
+    const btn = document.getElementById('confirm-delete-btn');
+    btn.disabled = true; btn.textContent = 'Deleting...';
+    try {
+      await Api.delete(`/policies/${deleteTargetId}`);
+      Toast.success('Policy deleted.');
+      deleteTargetId = null;
+      closeModal('delete-modal');
+      selectedPolicy = null;
+      await loadPolicies();
+    } catch (err) {
+      Toast.error(err.message);
+    } finally {
+      btn.disabled = false; btn.textContent = 'Delete';
+    }
+  }
+</script>
+</body>
+</html>

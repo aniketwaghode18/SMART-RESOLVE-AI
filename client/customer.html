@@ -1,0 +1,558 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Customer Support | SmartResolve AI</title>
+  <meta name="description" content="AI-powered customer support chat for SmartResolve.">
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='8' fill='%233d7fff'/><text y='22' x='6' font-size='18' font-family='sans-serif' fill='white' font-weight='bold'>S</text></svg>">
+  <link rel="stylesheet" href="styles/main.css">
+  <style>
+    body { overflow: hidden; }
+    .chat-layout {
+      display: grid;
+      grid-template-columns: 280px 1fr 320px;
+      height: 100vh;
+      padding-top: var(--header-height);
+    }
+
+    /* ── Left Sidebar ── */
+    .chat-sidebar {
+      background: var(--bg-surface);
+      border-right: 1px solid var(--border-subtle);
+      display: flex; flex-direction: column;
+      overflow: hidden;
+    }
+    .chat-sidebar-header {
+      padding: var(--space-4) var(--space-5);
+      border-bottom: 1px solid var(--border-subtle);
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .chat-sidebar-header h3 { font-size: 0.875rem; font-weight: 600; }
+    .conversations-list { flex: 1; overflow-y: auto; padding: var(--space-3); }
+    .convo-item {
+      padding: var(--space-3) var(--space-4); border-radius: var(--radius-md);
+      cursor: pointer; transition: background var(--transition-fast);
+      margin-bottom: 2px; border: 1px solid transparent;
+    }
+    .convo-item:hover { background: var(--bg-hover); }
+    .convo-item.active { background: var(--accent-subtle); border-color: rgba(61,127,255,0.2); }
+    .convo-item-title { font-size: 0.8rem; font-weight: 500; color: var(--text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .convo-item-meta  { font-size: 0.7rem; color: var(--text-muted); margin-top: 2px; }
+    .new-chat-btn { width: calc(100% - var(--space-6)); margin: var(--space-3); }
+
+    /* ── Main Chat ── */
+    .chat-main {
+      display: flex; flex-direction: column;
+      background: var(--bg-base); overflow: hidden;
+    }
+    .chat-header {
+      padding: var(--space-4) var(--space-6);
+      border-bottom: 1px solid var(--border-subtle);
+      display: flex; align-items: center; justify-content: space-between;
+      background: var(--bg-surface);
+    }
+    .chat-status {
+      display: flex; align-items: center; gap: var(--space-2);
+      font-size: 0.75rem; color: var(--success);
+    }
+    .status-dot { width: 8px; height: 8px; border-radius: 50%; background: currentColor; }
+
+    .messages-container {
+      flex: 1; overflow-y: auto; padding: var(--space-6);
+      display: flex; flex-direction: column; gap: var(--space-4);
+    }
+
+    .welcome-message {
+      text-align: center; padding: var(--space-10) var(--space-6);
+    }
+    .welcome-icon {
+      width: 56px; height: 56px; background: var(--accent-subtle);
+      border-radius: var(--radius-xl); display: flex; align-items: center;
+      justify-content: center; margin: 0 auto var(--space-4); color: var(--accent-primary);
+    }
+    .welcome-message h3 { color: var(--text-primary); margin-bottom: var(--space-2); }
+    .welcome-message p  { font-size: 0.875rem; max-width: 360px; margin: 0 auto; }
+
+    /* ── Message Bubbles ── */
+    .message { display: flex; gap: var(--space-3); max-width: 680px; }
+    .message.customer { flex-direction: row-reverse; margin-left: auto; }
+    .message-avatar {
+      width: 32px; height: 32px; border-radius: 50%; flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center; font-size: 0.75rem;
+      font-weight: 600; color: #fff;
+    }
+    .avatar-customer { background: var(--accent-primary); }
+    .avatar-ai       { background: linear-gradient(135deg, #22c55e 0%, #06b6d4 100%); }
+    .avatar-agent    { background: var(--warning); }
+
+    .message-content { flex: 1; }
+    .message-bubble {
+      padding: var(--space-3) var(--space-4);
+      border-radius: var(--radius-lg); font-size: 0.875rem; line-height: 1.6;
+      max-width: 560px;
+    }
+    .message.ai .message-bubble {
+      background: var(--bg-card); border: 1px solid var(--border-subtle); color: var(--text-primary);
+      border-radius: var(--radius-md) var(--radius-lg) var(--radius-lg) var(--radius-lg);
+    }
+    .message.customer .message-bubble {
+      background: var(--accent-primary); color: #fff;
+      border-radius: var(--radius-lg) var(--radius-md) var(--radius-lg) var(--radius-lg);
+      margin-left: auto;
+    }
+    .message.agent .message-bubble {
+      background: var(--warning-bg); border: 1px solid rgba(245,158,11,0.2); color: var(--text-primary);
+    }
+    .message-meta { font-size: 0.7rem; color: var(--text-muted); margin-top: 4px; }
+    .message.customer .message-meta { text-align: right; }
+
+    /* Typing indicator */
+    .typing-indicator { display: flex; gap: var(--space-3); align-items: flex-end; }
+    .typing-dots {
+      background: var(--bg-card); border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-md) var(--radius-lg) var(--radius-lg) var(--radius-lg);
+      padding: var(--space-3) var(--space-4); display: flex; gap: 5px; align-items: center;
+    }
+    .typing-dot {
+      width: 6px; height: 6px; border-radius: 50%; background: var(--text-muted);
+      animation: typing-bounce 1.2s infinite;
+    }
+    .typing-dot:nth-child(2) { animation-delay: 0.2s; }
+    .typing-dot:nth-child(3) { animation-delay: 0.4s; }
+    @keyframes typing-bounce {
+      0%, 80%, 100% { transform: translateY(0); opacity: 0.4; }
+      40% { transform: translateY(-6px); opacity: 1; }
+    }
+
+    /* ── Suggested Questions ── */
+    .suggestions {
+      padding: 0 var(--space-6) var(--space-3);
+      display: flex; flex-wrap: wrap; gap: var(--space-2);
+    }
+    .suggestion-chip {
+      background: var(--bg-elevated); border: 1px solid var(--border-default);
+      border-radius: var(--radius-md); padding: var(--space-2) var(--space-3);
+      font-size: 0.78rem; color: var(--text-secondary); cursor: pointer;
+      transition: all var(--transition-fast);
+    }
+    .suggestion-chip:hover { border-color: var(--accent-primary); color: var(--accent-primary); background: var(--accent-subtle); }
+
+    /* ── Input Area ── */
+    .chat-input-area {
+      padding: var(--space-4) var(--space-6);
+      border-top: 1px solid var(--border-subtle); background: var(--bg-surface);
+    }
+    .chat-input-row {
+      display: flex; gap: var(--space-3); align-items: flex-end;
+    }
+    .chat-textarea {
+      flex: 1; background: var(--bg-elevated); border: 1px solid var(--border-default);
+      border-radius: var(--radius-lg); color: var(--text-primary); padding: var(--space-3) var(--space-4);
+      font-size: 0.9rem; resize: none; max-height: 140px; min-height: 44px; outline: none;
+      line-height: 1.5; transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+    }
+    .chat-textarea:focus { border-color: var(--accent-primary); box-shadow: 0 0 0 3px var(--accent-ring); }
+    .chat-textarea::placeholder { color: var(--text-muted); }
+    .send-btn {
+      width: 44px; height: 44px; border-radius: var(--radius-lg); background: var(--accent-primary);
+      color: #fff; border: none; cursor: pointer; display: flex; align-items: center;
+      justify-content: center; flex-shrink: 0; transition: all var(--transition-fast);
+    }
+    .send-btn:hover:not(:disabled) { background: var(--accent-hover); box-shadow: 0 0 0 3px var(--accent-ring); }
+    .send-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    /* ── Right Analysis Panel ── */
+    .analysis-sidebar {
+      background: var(--bg-surface); border-left: 1px solid var(--border-subtle);
+      overflow-y: auto; display: flex; flex-direction: column;
+    }
+    .analysis-sidebar-header {
+      padding: var(--space-4) var(--space-5);
+      border-bottom: 1px solid var(--border-subtle);
+    }
+    .analysis-sidebar-header h3 { font-size: 0.875rem; font-weight: 600; }
+    .analysis-sidebar-header p  { font-size: 0.75rem; color: var(--text-muted); margin-top: 2px; }
+    .analysis-content { padding: var(--space-5); flex: 1; }
+
+    .analysis-empty { text-align: center; padding: var(--space-10) var(--space-4); color: var(--text-muted); font-size: 0.85rem; }
+
+    .analysis-block {
+      background: var(--bg-card); border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-lg); padding: var(--space-4); margin-bottom: var(--space-4);
+    }
+    .analysis-block-title { font-size: 0.7rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-muted); margin-bottom: var(--space-3); }
+    .analysis-metric { display: flex; justify-content: space-between; align-items: center; padding: 6px 0; border-bottom: 1px solid var(--border-subtle); font-size: 0.825rem; }
+    .analysis-metric:last-child { border-bottom: none; }
+    .metric-key { color: var(--text-secondary); }
+    .metric-val { color: var(--text-primary); font-weight: 600; }
+
+    .escalation-notice {
+      background: var(--danger-bg); border: 1px solid rgba(239,68,68,0.25);
+      border-radius: var(--radius-md); padding: var(--space-4);
+      font-size: 0.825rem; color: var(--danger); margin-top: var(--space-4);
+    }
+
+    @media (max-width: 1024px) {
+      .chat-layout { grid-template-columns: 1fr; }
+      .chat-sidebar, .analysis-sidebar { display: none; }
+      body { overflow: auto; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ── Navbar ─────────────────────────────────────────── -->
+<nav class="navbar">
+  <div class="navbar-inner">
+    <a href="index.html" class="navbar-brand">
+      <div class="navbar-logo">S</div>
+      <span class="navbar-name">SmartResolve AI</span>
+    </a>
+    <nav class="navbar-nav">
+      <a href="customer.html" class="nav-link active">Chat</a>
+      <a href="orders.html" class="nav-link">My Orders</a>
+    </nav>
+    <div class="navbar-actions" id="navbar-user"></div>
+  </div>
+</nav>
+
+<div class="chat-layout">
+  <!-- Left: Conversations list -->
+  <aside class="chat-sidebar">
+    <div class="chat-sidebar-header">
+      <h3>Conversations</h3>
+    </div>
+    <button class="btn btn-secondary new-chat-btn btn-sm" id="new-chat-btn" onclick="startNewConversation()">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+      New Conversation
+    </button>
+    <div class="conversations-list" id="conversations-list">
+      <div style="padding: var(--space-4); text-align:center; color: var(--text-muted); font-size:0.8rem;">Loading...</div>
+    </div>
+  </aside>
+
+  <!-- Center: Chat -->
+  <main class="chat-main">
+    <div class="chat-header">
+      <div>
+        <h2 style="font-size:0.95rem; font-weight:600;" id="chat-title">SmartResolve AI Support</h2>
+        <div class="chat-status">
+          <span class="status-dot"></span>
+          <span>AI Online</span>
+        </div>
+      </div>
+      <button class="btn btn-ghost btn-sm" onclick="clearCurrentConversation()" id="clear-btn" style="display:none;">Clear</button>
+    </div>
+
+    <div class="messages-container" id="messages-container">
+      <div class="welcome-message" id="welcome-msg">
+        <div class="welcome-icon">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+        </div>
+        <h3>How can I help you?</h3>
+        <p>Ask me about your orders, returns, refunds, or any other support issue.</p>
+      </div>
+    </div>
+
+    <!-- Suggestions -->
+    <div class="suggestions" id="suggestions">
+      <button class="suggestion-chip" onclick="sendSuggestion('Where is my order?')">Where is my order?</button>
+      <button class="suggestion-chip" onclick="sendSuggestion('I want to return a product.')">Return a product</button>
+      <button class="suggestion-chip" onclick="sendSuggestion('My product arrived damaged.')">Damaged product</button>
+      <button class="suggestion-chip" onclick="sendSuggestion('I want a refund.')">Request refund</button>
+      <button class="suggestion-chip" onclick="sendSuggestion('I received the wrong product.')">Wrong product</button>
+    </div>
+
+    <!-- Input -->
+    <div class="chat-input-area">
+      <div class="chat-input-row">
+        <textarea class="chat-textarea" id="chat-input" placeholder="Type your message..." rows="1" maxlength="1000"></textarea>
+        <button class="send-btn" id="send-btn" onclick="sendMessage()" aria-label="Send message">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+        </button>
+      </div>
+    </div>
+  </main>
+
+  <!-- Right: AI Analysis Panel -->
+  <aside class="analysis-sidebar">
+    <div class="analysis-sidebar-header">
+      <h3>AI Analysis</h3>
+      <p>Updated after each response</p>
+    </div>
+    <div class="analysis-content" id="analysis-content">
+      <div class="analysis-empty">
+        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="margin:0 auto 8px; opacity:0.3;"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+        Send a message to see the AI pipeline analysis here.
+      </div>
+    </div>
+  </aside>
+</div>
+
+<div class="toast-container" id="toast-container"></div>
+
+<script src="scripts/utils.js"></script>
+<script>
+  let currentConversationId = null;
+  let isSending = false;
+
+  document.addEventListener('DOMContentLoaded', async () => {
+    Auth.requireAuth();
+    loadConversations();
+    setupTextareaAutoResize();
+  });
+
+  // Auto-resize textarea
+  function setupTextareaAutoResize() {
+    const ta = document.getElementById('chat-input');
+    ta.addEventListener('input', () => {
+      ta.style.height = 'auto';
+      ta.style.height = Math.min(ta.scrollHeight, 140) + 'px';
+    });
+    ta.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
+    });
+  }
+
+  async function loadConversations() {
+    try {
+      const res = await Api.get('/conversations?limit=20');
+      const list = res.conversations || res.data || [];
+      renderConversationList(list);
+    } catch (err) {
+      console.error('Failed to load conversations', err);
+    }
+  }
+
+  function renderConversationList(convos) {
+    const el = document.getElementById('conversations-list');
+    if (!convos.length) {
+      el.innerHTML = '<div style="padding:var(--space-4);text-align:center;color:var(--text-muted);font-size:0.8rem;">No conversations yet</div>';
+      return;
+    }
+    el.innerHTML = convos.map(c => `
+      <div class="convo-item ${c._id === currentConversationId ? 'active' : ''}"
+           onclick="loadConversation('${c._id}')" id="convo-${c._id}">
+        <div class="convo-item-title">Conversation ${escapeHtml(c.conversationId || c._id.slice(-6))}</div>
+        <div class="convo-item-meta">${relativeTime(c.updatedAt || c.createdAt)} &middot; <span class="badge badge-${badgeClass(c.status)}" style="font-size:0.6rem;">${escapeHtml(c.status)}</span></div>
+      </div>
+    `).join('');
+  }
+
+  async function startNewConversation() {
+    try {
+      const res = await Api.post('/support/conversation/start', {});
+      currentConversationId = res.conversationId || res._id;
+      clearMessages();
+      document.getElementById('chat-title').textContent = `Conversation ${(currentConversationId || '').slice(-6)}`;
+      document.getElementById('clear-btn').style.display = '';
+      loadConversations();
+      Toast.success('New conversation started');
+    } catch (err) {
+      Toast.error(err.message);
+    }
+  }
+
+  async function loadConversation(id) {
+    currentConversationId = id;
+    clearMessages();
+    document.getElementById('chat-title').textContent = `Conversation ${id.slice(-6)}`;
+    document.getElementById('clear-btn').style.display = '';
+    $$('.convo-item').forEach(el => el.classList.remove('active'));
+    const convoEl = document.getElementById(`convo-${id}`);
+    if (convoEl) convoEl.classList.add('active');
+
+    try {
+      const res = await Api.get(`/support/conversation/${id}/history`);
+      const msgs = res.messages || [];
+      if (!msgs.length) { showWelcome(); return; }
+      hideWelcome();
+      msgs.forEach(m => appendMessage(m.message || m.content, m.sender, m.timestamp));
+      scrollToBottom();
+    } catch (err) {
+      Toast.error('Failed to load conversation history.');
+    }
+  }
+
+  function clearMessages() {
+    const container = document.getElementById('messages-container');
+    container.innerHTML = '';
+    showWelcome();
+    resetAnalysis();
+  }
+
+  async function clearCurrentConversation() {
+    if (!currentConversationId) return;
+    currentConversationId = null;
+    clearMessages();
+    document.getElementById('clear-btn').style.display = 'none';
+    document.getElementById('chat-title').textContent = 'SmartResolve AI Support';
+    $$('.convo-item').forEach(el => el.classList.remove('active'));
+  }
+
+  async function sendMessage() {
+    if (isSending) return;
+    const input = document.getElementById('chat-input');
+    const text  = input.value.trim();
+    if (!text) return;
+
+    // Ensure we have a conversation
+    if (!currentConversationId) {
+      try {
+        const res = await Api.post('/support/conversation/start', {});
+        currentConversationId = res.conversationId || res._id;
+        document.getElementById('chat-title').textContent = `Conversation ${(currentConversationId || '').slice(-6)}`;
+        document.getElementById('clear-btn').style.display = '';
+        loadConversations();
+      } catch (err) { Toast.error('Failed to start conversation.'); return; }
+    }
+
+    input.value = '';
+    input.style.height = 'auto';
+    hideWelcome();
+    hideSuggestions();
+
+    appendMessage(text, 'customer', new Date().toISOString());
+    showTypingIndicator();
+    isSending = true;
+    document.getElementById('send-btn').disabled = true;
+
+    try {
+      const user = Auth.getUser();
+      const res = await Api.post('/support/message', {
+        conversationId: currentConversationId,
+        customerId: user?._id || user?.id,
+        message: text
+      });
+
+      hideTypingIndicator();
+      appendMessage(res.message, res.escalated ? 'agent' : 'ai', new Date().toISOString());
+      renderAnalysis(res.analysis, res.escalated);
+      scrollToBottom();
+    } catch (err) {
+      hideTypingIndicator();
+      appendMessage('Sorry, I encountered an error processing your request. Please try again.', 'ai', new Date().toISOString());
+      Toast.error(err.message);
+    } finally {
+      isSending = false;
+      document.getElementById('send-btn').disabled = false;
+    }
+  }
+
+  function sendSuggestion(text) {
+    document.getElementById('chat-input').value = text;
+    sendMessage();
+  }
+
+  function appendMessage(text, sender, timestamp) {
+    const container = document.getElementById('messages-container');
+    const avatarClass = sender === 'customer' ? 'avatar-customer' : (sender === 'agent' ? 'avatar-agent' : 'avatar-ai');
+    const initial = sender === 'customer' ? 'U' : (sender === 'agent' ? 'A' : 'AI');
+    const div = document.createElement('div');
+    div.className = `message ${sender}`;
+    div.innerHTML = `
+      <div class="message-avatar ${avatarClass}">${initial}</div>
+      <div class="message-content">
+        <div class="message-bubble">${escapeHtml(text).replace(/\n/g, '<br>')}</div>
+        <div class="message-meta">${relativeTime(timestamp)}</div>
+      </div>
+    `;
+    container.appendChild(div);
+    scrollToBottom();
+  }
+
+  function showTypingIndicator() {
+    const container = document.getElementById('messages-container');
+    const div = document.createElement('div');
+    div.className = 'typing-indicator'; div.id = 'typing-indicator';
+    div.innerHTML = `
+      <div class="message-avatar avatar-ai">AI</div>
+      <div class="typing-dots">
+        <div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div>
+      </div>
+    `;
+    container.appendChild(div);
+    scrollToBottom();
+  }
+  function hideTypingIndicator() {
+    const el = document.getElementById('typing-indicator');
+    if (el) el.remove();
+  }
+
+  function showWelcome()  { const w = document.getElementById('welcome-msg'); if(w) { w.style.display=''; } }
+  function hideWelcome()  { const w = document.getElementById('welcome-msg'); if(w) w.remove(); }
+  function hideSuggestions() { document.getElementById('suggestions').style.display = 'none'; }
+  function scrollToBottom() {
+    const c = document.getElementById('messages-container');
+    c.scrollTop = c.scrollHeight;
+  }
+
+  function renderAnalysis(analysis, escalated) {
+    if (!analysis) return;
+    const el = document.getElementById('analysis-content');
+    const rawConf = analysis.confidence ?? analysis.intentConfidence ?? 0;
+    const confidencePct = Math.round(rawConf > 1 ? rawConf : rawConf * 100);
+
+    el.innerHTML = `
+      <div class="analysis-block">
+        <div class="analysis-block-title">Intent & Confidence</div>
+        <div class="analysis-metric">
+          <span class="metric-key">Intent</span>
+          <span class="metric-val">${escapeHtml(analysis.intent || 'N/A')}</span>
+        </div>
+        <div class="analysis-metric">
+          <span class="metric-key">Confidence</span>
+          <span class="metric-val">${confidencePct}%</span>
+        </div>
+        <div class="progress-bar" style="margin-top:var(--space-2);">
+          <div class="progress-fill" style="width:${confidencePct}%; background: ${confidencePct > 70 ? 'var(--success)' : 'var(--warning)'}"></div>
+        </div>
+      </div>
+
+      <div class="analysis-block">
+        <div class="analysis-block-title">Emotion & Priority</div>
+        <div class="analysis-metric">
+          <span class="metric-key">Sentiment</span>
+          <span class="metric-val" style="color:${sentimentColor(analysis.sentiment)}">${escapeHtml(analysis.sentiment || 'N/A')}</span>
+        </div>
+        <div class="analysis-metric">
+          <span class="metric-key">Urgency</span>
+          <span class="metric-val"><span class="badge badge-${analysis.urgency || 'LOW'}">${escapeHtml(analysis.urgency || 'N/A')}</span></span>
+        </div>
+      </div>
+
+      <div class="analysis-block">
+        <div class="analysis-block-title">Resolution</div>
+        <div class="analysis-metric">
+          <span class="metric-key">Recommended</span>
+          <span class="metric-val">${escapeHtml(analysis.resolution || 'N/A')}</span>
+        </div>
+        <div class="analysis-metric">
+          <span class="metric-key">Policy Used</span>
+          <span class="metric-val text-sm">${escapeHtml(analysis.policyUsed || analysis.policy || 'N/A')}</span>
+        </div>
+        <div class="analysis-metric">
+          <span class="metric-key">Status</span>
+          <span class="metric-val badge badge-success">Verified</span>
+        </div>
+      </div>
+
+      ${escalated ? `<div class="escalation-notice">
+        <strong>Escalated to Human Agent</strong><br>
+        This conversation has been flagged for human review due to complexity or high-risk indicators.
+      </div>` : ''}
+    `;
+  }
+
+  function resetAnalysis() {
+    document.getElementById('analysis-content').innerHTML = `
+      <div class="analysis-empty">
+        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="margin:0 auto 8px; opacity:0.3;"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+        Send a message to see the AI pipeline analysis here.
+      </div>
+    `;
+  }
+</script>
+</body>
+</html>

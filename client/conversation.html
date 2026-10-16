@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Conversation Detail | SmartResolve AI</title>
+  <meta name="description" content="View conversation details, AI analysis, and manage escalated cases.">
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='8' fill='%233d7fff'/><text y='22' x='6' font-size='18' font-family='sans-serif' fill='white' font-weight='bold'>S</text></svg>">
+  <link rel="stylesheet" href="styles/main.css">
+  <style>
+    .convo-layout {
+      max-width: 1100px; margin: 0 auto;
+      padding: var(--space-8) var(--space-6);
+      padding-top: calc(var(--header-height) + var(--space-8));
+    }
+    .convo-grid { display: grid; grid-template-columns: 1fr 360px; gap: var(--space-6); align-items: start; }
+    .messages-panel {
+      background: var(--bg-card); border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-lg); overflow: hidden;
+    }
+    .messages-header { padding: var(--space-4) var(--space-5); background: var(--bg-elevated); border-bottom: 1px solid var(--border-subtle); }
+    .messages-body   { padding: var(--space-5); max-height: 500px; overflow-y: auto; display: flex; flex-direction: column; gap: var(--space-4); }
+
+    .msg { display: flex; gap: var(--space-3); }
+    .msg.customer { flex-direction: row-reverse; }
+    .msg-avatar { width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.7rem; font-weight: 700; color: #fff; flex-shrink: 0; }
+    .msg-avatar.customer { background: var(--accent-primary); }
+    .msg-avatar.ai       { background: linear-gradient(135deg, #22c55e 0%, #06b6d4 100%); }
+    .msg-avatar.agent    { background: var(--warning); }
+    .msg-bubble {
+      max-width: 72%; padding: var(--space-3) var(--space-4); border-radius: var(--radius-lg);
+      font-size: 0.875rem; line-height: 1.6;
+    }
+    .msg.customer .msg-bubble { background: var(--accent-primary); color: #fff; border-radius: var(--radius-lg) var(--radius-md) var(--radius-lg) var(--radius-lg); }
+    .msg.ai .msg-bubble, .msg.agent .msg-bubble { background: var(--bg-elevated); border: 1px solid var(--border-subtle); color: var(--text-primary); border-radius: var(--radius-md) var(--radius-lg) var(--radius-lg) var(--radius-lg); }
+    .msg-time { font-size: 0.7rem; color: var(--text-muted); margin-top: 3px; }
+    .msg.customer .msg-time { text-align: right; }
+
+    .agent-reply-area { padding: var(--space-4) var(--space-5); border-top: 1px solid var(--border-subtle); }
+    .reply-actions { display: flex; gap: var(--space-2); margin-top: var(--space-3); flex-wrap: wrap; }
+
+    .info-panel { display: flex; flex-direction: column; gap: var(--space-4); }
+    .info-section { background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: var(--radius-lg); overflow: hidden; }
+    .info-section-header { padding: var(--space-3) var(--space-4); background: var(--bg-elevated); border-bottom: 1px solid var(--border-subtle); font-size: 0.7rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.07em; color: var(--text-muted); }
+    .info-section-body { padding: var(--space-4); }
+    .info-row { display: flex; justify-content: space-between; align-items: flex-start; padding: 5px 0; font-size: 0.825rem; border-bottom: 1px solid var(--border-subtle); gap: var(--space-4); }
+    .info-row:last-child { border-bottom: none; }
+    .info-key { color: var(--text-muted); flex-shrink: 0; }
+    .info-val { color: var(--text-primary); font-weight: 500; text-align: right; word-break: break-word; }
+
+    .case-actions { display: flex; flex-direction: column; gap: var(--space-2); }
+
+    @media (max-width: 900px) {
+      .convo-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<nav class="navbar">
+  <div class="navbar-inner">
+    <a href="index.html" class="navbar-brand">
+      <div class="navbar-logo">S</div>
+      <span class="navbar-name">SmartResolve AI</span>
+    </a>
+    <nav class="navbar-nav">
+      <a href="agent-dashboard.html" class="nav-link">Dashboard</a>
+    </nav>
+    <div class="navbar-actions" id="navbar-user"></div>
+  </div>
+</nav>
+
+<div class="convo-layout">
+  <div class="flex items-center gap-3 mb-6">
+    <a href="agent-dashboard.html" class="btn btn-ghost btn-sm">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+      Back
+    </a>
+    <div>
+      <h1 class="page-title" style="font-size:1.25rem;" id="page-heading">Conversation Detail</h1>
+      <p class="page-subtitle" id="page-sub">Loading...</p>
+    </div>
+  </div>
+
+  <div id="error-state" style="display:none;">
+    <div class="empty-state">
+      <h3>Failed to load conversation</h3>
+      <p id="error-msg"></p>
+    </div>
+  </div>
+
+  <div class="convo-grid" id="convo-content" style="display:none;">
+    <!-- Left: Messages + Reply -->
+    <div>
+      <div class="messages-panel">
+        <div class="messages-header">
+          <h3 style="font-size:0.9rem; font-weight:600;" id="conv-id-label">Conversation</h3>
+        </div>
+        <div class="messages-body" id="messages-body">
+          <div style="text-align:center; color:var(--text-muted); font-size:0.85rem;">Loading messages...</div>
+        </div>
+        <!-- Agent Reply Area -->
+        <div class="agent-reply-area" id="agent-reply-area">
+          <label class="form-label">Agent Response</label>
+          <textarea class="form-textarea" id="agent-response-input" rows="3" placeholder="Type your response to the customer..."></textarea>
+          <div class="reply-actions">
+            <button class="btn btn-primary btn-sm" onclick="sendAgentResponse()" id="send-response-btn">Send Response</button>
+            <button class="btn btn-success btn-sm" onclick="resolveCase()" id="resolve-btn">Resolve Case</button>
+            <button class="btn btn-secondary btn-sm" onclick="prefillAIResponse()" id="use-ai-btn">Use AI Draft</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Right: Info Panels -->
+    <div class="info-panel">
+      <!-- Customer Info -->
+      <div class="info-section">
+        <div class="info-section-header">Customer Information</div>
+        <div class="info-section-body" id="customer-info">
+          <div class="skeleton" style="height:60px;"></div>
+        </div>
+      </div>
+
+      <!-- AI Analysis -->
+      <div class="info-section">
+        <div class="info-section-header">AI Analysis</div>
+        <div class="info-section-body" id="ai-analysis">
+          <div class="skeleton" style="height:120px;"></div>
+        </div>
+      </div>
+
+      <!-- Order Info -->
+      <div class="info-section" id="order-section" style="display:none;">
+        <div class="info-section-header">Order Information</div>
+        <div class="info-section-body" id="order-info"></div>
+      </div>
+
+      <!-- Escalation -->
+      <div class="info-section" id="escalation-section" style="display:none;">
+        <div class="info-section-header">Escalation</div>
+        <div class="info-section-body" id="escalation-info"></div>
+      </div>
+
+      <!-- Actions -->
+      <div class="info-section">
+        <div class="info-section-header">Case Actions</div>
+        <div class="info-section-body">
+          <div class="case-actions" id="case-actions">
+            <button class="btn btn-success w-full" onclick="resolveCase()" id="resolve-case-btn">Mark as Resolved</button>
+            <button class="btn btn-secondary w-full" onclick="takeOver()">Take Over Conversation</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="toast-container"></div>
+
+<script src="scripts/utils.js"></script>
+<script>
+  const params = new URLSearchParams(window.location.search);
+  const escalationId   = params.get('escalationId');
+  const conversationId = params.get('conversationId');
+  let escalationData = null;
+  let conversationData = null;
+  let lastAnalysis = null;
+  let lastAIResponse = '';
+
+  document.addEventListener('DOMContentLoaded', async () => {
+    Auth.requireRole('agent');
+    if (!conversationId && !escalationId) {
+      showError('No conversation specified.');
+      return;
+    }
+    try {
+      await loadConversationData();
+      if (escalationId) await loadEscalationData();
+    } catch (err) {
+      showError(err.message);
+    }
+  });
+
+  async function loadConversationData() {
+    const id = conversationId;
+    if (!id) return;
+    const res = await Api.get(`/conversations/${id}`);
+    conversationData = res.data || res;
+    renderConversation(conversationData);
+  }
+
+  async function loadEscalationData() {
+    try {
+      const res = await Api.get(`/escalations/${escalationId}`);
+      escalationData = res.data || res;
+      renderEscalation(escalationData);
+    } catch (err) { /* escalation optional */ }
+  }
+
+  function renderConversation(data) {
+    const convo    = data.conversation || data;
+    const messages = data.messages || [];
+    const analysis = data.latestAnalysis || (data.analyses && data.analyses[0]) || {};
+    lastAnalysis   = analysis;
+
+    document.getElementById('page-heading').textContent = `Conversation ${convo.conversationId || convo._id?.slice(-8)}`;
+    document.getElementById('page-sub').textContent     = `Status: ${convo.status} · ${formatDateTime(convo.createdAt)}`;
+    document.getElementById('conv-id-label').textContent = `Conversation #${convo.conversationId || convo._id?.slice(-8)}`;
+
+    // Customer
+    const customer = convo.customerId || {};
+    document.getElementById('customer-info').innerHTML = `
+      <div class="info-row"><span class="info-key">Name</span><span class="info-val">${escapeHtml(customer.name || 'N/A')}</span></div>
+      <div class="info-row"><span class="info-key">Email</span><span class="info-val">${escapeHtml(customer.email || 'N/A')}</span></div>
+      <div class="info-row"><span class="info-key">Role</span><span class="info-val">${escapeHtml(customer.role || 'customer')}</span></div>
+    `;
+
+    // AI Analysis
+    const conf = analysis.intentConfidence ?? analysis.confidence;
+    document.getElementById('ai-analysis').innerHTML = `
+      <div class="info-row"><span class="info-key">Intent</span><span class="info-val">${escapeHtml(analysis.intent || 'N/A')}</span></div>
+      <div class="info-row"><span class="info-key">Confidence</span><span class="info-val">${conf != null ? pct(conf) : 'N/A'}</span></div>
+      <div class="info-row"><span class="info-key">Sentiment</span><span class="info-val" style="color:${sentimentColor(analysis.sentiment)}">${escapeHtml(analysis.sentiment || 'N/A')}</span></div>
+      <div class="info-row"><span class="info-key">Urgency</span><span class="info-val"><span class="badge badge-${analysis.urgency || 'LOW'}">${escapeHtml(analysis.urgency || 'N/A')}</span></span></div>
+      <div class="info-row"><span class="info-key">Resolution</span><span class="info-val">${escapeHtml(analysis.resolution || 'N/A')}</span></div>
+      <div class="info-row"><span class="info-key">Policy</span><span class="info-val text-sm">${escapeHtml(analysis.policyUsed || 'N/A')}</span></div>
+      <div class="info-row"><span class="info-key">Critic Status</span>
+        <span class="info-val"><span class="badge badge-success">Reviewed</span></span>
+      </div>
+    `;
+
+    // Messages
+    const body = document.getElementById('messages-body');
+    if (!messages.length) {
+      body.innerHTML = '<div style="text-align:center;color:var(--text-muted);font-size:0.85rem;">No messages yet</div>';
+    } else {
+      body.innerHTML = messages.map(m => {
+        const sender = m.sender || 'ai';
+        return `
+          <div class="msg ${sender}">
+            <div class="msg-avatar ${sender}">${sender === 'customer' ? 'U' : sender === 'agent' ? 'A' : 'AI'}</div>
+            <div>
+              <div class="msg-bubble">${escapeHtml(m.message || m.content || '').replace(/\n/g,'<br>')}</div>
+              <div class="msg-time">${formatDateTime(m.timestamp)}</div>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    document.getElementById('convo-content').style.display = 'grid';
+  }
+
+  function renderEscalation(esc) {
+    const section = document.getElementById('escalation-section');
+    section.style.display = '';
+    document.getElementById('escalation-info').innerHTML = `
+      <div class="info-row"><span class="info-key">Case ID</span><span class="info-val font-mono">${escapeHtml(esc.caseId || esc._id?.slice(-8))}</span></div>
+      <div class="info-row"><span class="info-key">Priority</span><span class="info-val"><span class="badge badge-${esc.priority}">${escapeHtml(esc.priority)}</span></span></div>
+      <div class="info-row"><span class="info-key">Department</span><span class="info-val">${escapeHtml(esc.department || 'N/A')}</span></div>
+      <div class="info-row"><span class="info-key">Reason</span><span class="info-val text-sm">${escapeHtml(esc.reason || 'N/A')}</span></div>
+      <div class="info-row"><span class="info-key">Status</span><span class="info-val"><span class="badge badge-${badgeClass(esc.status)}">${escapeHtml(esc.status)}</span></span></div>
+      <div class="info-row"><span class="info-key">Created</span><span class="info-val">${formatDateTime(esc.createdAt)}</span></div>
+    `;
+  }
+
+  function showError(msg) {
+    document.getElementById('error-state').style.display = '';
+    document.getElementById('error-msg').textContent = msg;
+    document.getElementById('page-sub').textContent = 'Error';
+  }
+
+  function prefillAIResponse() {
+    const el = document.getElementById('agent-response-input');
+    el.value = lastAIResponse || (lastAnalysis?.resolution ? `Based on your request, we recommend: ${lastAnalysis.resolution}. Please let me know if you need further assistance.` : '');
+    el.focus();
+  }
+
+  async function sendAgentResponse() {
+    const text = document.getElementById('agent-response-input').value.trim();
+    if (!text) { Toast.warning('Please type a response.'); return; }
+    Toast.info('Response functionality would post to the conversation here.');
+    document.getElementById('agent-response-input').value = '';
+  }
+
+  async function resolveCase() {
+    if (!escalationId) { Toast.warning('No escalation linked to resolve.'); return; }
+    try {
+      await Api.patch(`/escalations/${escalationId}`, { status: 'RESOLVED' });
+      Toast.success('Case marked as resolved.');
+      document.getElementById('resolve-case-btn').disabled = true;
+      document.getElementById('resolve-case-btn').textContent = 'Resolved';
+    } catch (err) {
+      Toast.error(err.message);
+    }
+  }
+
+  function takeOver() { Toast.info('Conversation taken over: you are now the assigned agent.'); }
+</script>
+</body>
+</html>

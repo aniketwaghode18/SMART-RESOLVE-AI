@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Analytics | SmartResolve AI</title>
+  <meta name="description" content="Analytics dashboard showing AI pipeline performance, conversation metrics, and escalation data.">
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='8' fill='%233d7fff'/><text y='22' x='6' font-size='18' font-family='sans-serif' fill='white' font-weight='bold'>S</text></svg>">
+  <link rel="stylesheet" href="styles/main.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <style>
+    .charts-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: var(--space-6); }
+    .chart-card { background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: var(--radius-lg); padding: var(--space-5); }
+    .chart-card h3 { font-size: 0.875rem; font-weight: 600; margin-bottom: var(--space-4); }
+    .chart-container { height: 240px; position: relative; }
+    .overview-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--space-4); margin-bottom: var(--space-8); }
+    @media (max-width: 1024px) { .charts-grid { grid-template-columns: 1fr; } .overview-grid { grid-template-columns: repeat(2,1fr); } }
+    @media (max-width: 600px) { .overview-grid { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+
+<nav class="navbar">
+  <div class="navbar-inner">
+    <a href="index.html" class="navbar-brand">
+      <div class="navbar-logo">S</div>
+      <span class="navbar-name">SmartResolve AI</span>
+    </a>
+    <div class="navbar-actions" id="navbar-user"></div>
+  </div>
+</nav>
+
+<div class="app-layout">
+  <aside class="sidebar">
+    <nav class="sidebar-nav">
+      <p class="sidebar-section-label">Admin</p>
+      <a href="admin.html" class="sidebar-link">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+        Dashboard
+      </a>
+      <a href="analytics.html" class="sidebar-link active">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+        Analytics
+      </a>
+      <a href="policies.html" class="sidebar-link">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+        Policies
+      </a>
+      <a href="prompt-evaluation.html" class="sidebar-link">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+        Evaluation
+      </a>
+      <a href="agent-dashboard.html" class="sidebar-link">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        Agents
+      </a>
+    </nav>
+  </aside>
+
+  <main class="main-content">
+    <div class="page-header flex justify-between items-center">
+      <div>
+        <h1 class="page-title">Analytics</h1>
+        <p class="page-subtitle">AI pipeline performance and conversation metrics.</p>
+      </div>
+      <button class="btn btn-secondary btn-sm" onclick="loadAll()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+        Refresh
+      </button>
+    </div>
+
+    <!-- Overview Stats -->
+    <div class="overview-grid" id="overview-grid">
+      <div class="stat-card skeleton" style="height:100px;"></div>
+      <div class="stat-card skeleton" style="height:100px;"></div>
+      <div class="stat-card skeleton" style="height:100px;"></div>
+      <div class="stat-card skeleton" style="height:100px;"></div>
+    </div>
+
+    <!-- Charts -->
+    <div class="charts-grid" id="charts-grid">
+      <div class="chart-card"><h3>Intent Distribution</h3><div class="chart-container"><canvas id="chart-intent"></canvas></div></div>
+      <div class="chart-card"><h3>Sentiment Distribution</h3><div class="chart-container"><canvas id="chart-sentiment"></canvas></div></div>
+      <div class="chart-card"><h3>Urgency Distribution</h3><div class="chart-container"><canvas id="chart-urgency"></canvas></div></div>
+      <div class="chart-card"><h3>Daily Conversation Volume</h3><div class="chart-container"><canvas id="chart-daily"></canvas></div></div>
+      <div class="chart-card"><h3>Escalation Rate</h3><div class="chart-container"><canvas id="chart-escalation"></canvas></div></div>
+      <div class="chart-card"><h3>Prompt Performance</h3><div class="chart-container"><canvas id="chart-prompt"></canvas></div></div>
+    </div>
+  </main>
+</div>
+
+<div class="toast-container"></div>
+
+<script src="scripts/utils.js"></script>
+<script>
+  let charts = {};
+
+  document.addEventListener('DOMContentLoaded', () => {
+    Auth.requireRole('admin');
+    loadAll();
+  });
+
+  async function loadAll() {
+    try {
+      const res = await Api.get('/analytics');
+      const data = res.data || res;
+      renderOverview(data.overview);
+      renderCharts(data);
+    } catch (err) {
+      Toast.error('Failed to load analytics: ' + err.message);
+    }
+  }
+
+  function renderOverview(ov) {
+    if (!ov) return;
+    document.getElementById('overview-grid').innerHTML = `
+      <div class="stat-card">
+        <div class="stat-icon" style="background:var(--info-bg);color:var(--info);">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+        </div>
+        <div class="stat-label">Total Conversations</div>
+        <div class="stat-value">${ov.totalConversations ?? '--'}</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon" style="background:var(--success-bg);color:var(--success);">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+        </div>
+        <div class="stat-label">Resolved Automatically</div>
+        <div class="stat-value">${ov.resolvedAutomatically ?? '--'}</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon" style="background:var(--danger-bg);color:var(--danger);">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/></svg>
+        </div>
+        <div class="stat-label">Human Escalations</div>
+        <div class="stat-value">${ov.humanEscalations ?? '--'}</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon" style="background:var(--accent-subtle);color:var(--accent-primary);">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg>
+        </div>
+        <div class="stat-label">Avg AI Confidence</div>
+        <div class="stat-value">${ov.avgConfidence != null ? ov.avgConfidence + '%' : '--'}</div>
+      </div>
+    `;
+  }
+
+  function destroyChart(id) { if (charts[id]) { charts[id].destroy(); delete charts[id]; } }
+
+  function mkChart(id, type, data, options = {}) {
+    destroyChart(id);
+    const ctx = document.getElementById(id)?.getContext('2d');
+    if (!ctx) return;
+    charts[id] = new Chart(ctx, {
+      type,
+      data,
+      options: { ...CHART_DEFAULTS, ...options, plugins: { ...CHART_DEFAULTS.plugins, ...(options.plugins||{}) } }
+    });
+  }
+
+  function renderCharts(data) {
+    // Chart 1: Intent Distribution
+    const intents = data.intentDistribution || [];
+    mkChart('chart-intent', 'bar', {
+      labels: intents.map(i => i._id || i.intent),
+      datasets: [{ label: 'Count', data: intents.map(i => i.count), backgroundColor: CHART_COLORS.map(c => c + 'cc'), borderRadius: 4 }]
+    }, { indexAxis: 'y', plugins: { legend: { display: false } }, scales: { x: CHART_DEFAULTS.scales.x, y: { ticks: { color: '#9ba3b5', font: { size: 10 } }, grid: { color: '#2a2d35' } } } });
+
+    // Chart 2: Sentiment Distribution
+    const sentiments = data.sentimentDistribution || [];
+    mkChart('chart-sentiment', 'doughnut', {
+      labels: sentiments.map(s => s._id || s.sentiment),
+      datasets: [{ data: sentiments.map(s => s.count), backgroundColor: sentiments.map(s => sentimentColor(s._id || s.sentiment)), borderWidth: 0, hoverOffset: 6 }]
+    }, { scales: {} });
+
+    // Chart 3: Urgency Distribution
+    const urgencies = data.urgencyDistribution || [];
+    const urgencyColors = { LOW: '#22c55e', MEDIUM: '#f59e0b', HIGH: '#f97316', CRITICAL: '#ef4444' };
+    mkChart('chart-urgency', 'doughnut', {
+      labels: urgencies.map(u => u._id || u.urgency),
+      datasets: [{ data: urgencies.map(u => u.count), backgroundColor: urgencies.map(u => urgencyColors[u._id || u.urgency] || '#9ba3b5'), borderWidth: 0, hoverOffset: 6 }]
+    }, { scales: {} });
+
+    // Chart 4: Daily Volume
+    const daily = data.dailyVolume || [];
+    mkChart('chart-daily', 'line', {
+      labels: daily.map(d => d._id || d.date),
+      datasets: [{
+        label: 'Conversations', data: daily.map(d => d.count),
+        borderColor: '#3d7fff', backgroundColor: 'rgba(61,127,255,0.1)',
+        fill: true, tension: 0.4, pointRadius: 3, pointBackgroundColor: '#3d7fff'
+      }]
+    });
+
+    // Chart 5: Escalation Rate
+    const ov2 = data.overview || {};
+    const escCount = ov2.humanEscalations || (data.escalationMetrics?.total || 0);
+    const aiResolved = ov2.resolvedAutomatically || Math.max(0, (ov2.totalConversations || 0) - escCount);
+    mkChart('chart-escalation', 'doughnut', {
+      labels: ['Escalated', 'AI Resolved'],
+      datasets: [{ data: [escCount, aiResolved], backgroundColor: ['#ef4444cc', '#22c55ecc'], borderWidth: 0, hoverOffset: 6 }]
+    }, { scales: {} });
+
+    // Chart 6: Prompt Performance
+    const perfObj = data.promptPerformance || {};
+    const versions = perfObj.promptVersions || [];
+    mkChart('chart-prompt', 'bar', {
+      labels: versions.map(p => p.versionTag || p.name || 'v1'),
+      datasets: [
+        { label: 'Active', data: versions.map(p => p.active ? 1 : 0), backgroundColor: '#22c55ecc', borderRadius: 4 },
+        { label: 'Version', data: versions.map((_, i) => i + 1), backgroundColor: '#3d7fffcc', borderRadius: 4 }
+      ]
+    });
+  }
+</script>
+</body>
+</html>
